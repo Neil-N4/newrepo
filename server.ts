@@ -629,6 +629,73 @@ Bun.serve({
             },
         },
 
+        "/api/compose-shadow": {
+            async POST(req) {
+                try {
+                    const body = (await req.json().catch(() => ({}))) as {
+                        profile?: string | { id?: string };
+                        target_apps?: string[];
+                        targets?: string[] | string;
+                        transcript?: string;
+                        text?: string;
+                        audio_b64?: string;
+                    };
+                    const id = typeof body.profile === "string" ? body.profile : String(body.profile?.id || "default");
+                    const profile = await loadProfile(id);
+                    const targets = Array.isArray(body.target_apps)
+                        ? normaliseTargets(body.target_apps.join(","))
+                        : normaliseTargets(body.targets ?? "");
+                    const typedText = String(body.transcript || body.text || "").trim();
+                    const audioB64 = typeof body.audio_b64 === "string" ? body.audio_b64 : "";
+                    if (!typedText && !audioB64) {
+                        return Response.json({ error: "audio or text required" }, { status: 400 });
+                    }
+
+                    const personalizedPayload = {
+                        transcript: typedText,
+                        audio_b64: audioB64,
+                        profile,
+                        target_apps: targets,
+                        confirmed: false,
+                        approved: false,
+                        execute: false,
+                    };
+                    const baselineProfile = {
+                        ...(profile as any),
+                        terms: [],
+                        people: [],
+                        corrections: [],
+                        writing_samples: [],
+                    };
+                    const baselinePayload = {
+                        ...personalizedPayload,
+                        profile: baselineProfile,
+                    };
+
+                    const [personalizedRaw, baselineRaw] = await Promise.all([
+                        runComposePayload(personalizedPayload),
+                        runComposePayload(baselinePayload),
+                    ]);
+                    const personalized = parseLastJson(personalizedRaw) || {};
+                    const baseline = parseLastJson(baselineRaw) || {};
+                    return Response.json({
+                        personalized: {
+                            transcript: personalized.transcript || typedText,
+                            outputs: personalized.outputs || {},
+                            routing: personalized.routing || null,
+                        },
+                        baseline: {
+                            transcript: baseline.transcript || typedText,
+                            outputs: baseline.outputs || {},
+                            routing: baseline.routing || null,
+                        },
+                    });
+                } catch (err) {
+                    return Response.json({ error: String(err) }, { status: 500 });
+                }
+            },
+        },
+
         "/api/execute-action": {
             async POST(req) {
                 try {

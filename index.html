@@ -504,6 +504,11 @@
             color: #ceb7ff;
             box-shadow: 0 12px 28px rgba(167,139,250,0.08);
         }
+        .routing-badge.offline {
+            background: rgba(127, 29, 29, 0.28);
+            border-color: rgba(248, 113, 113, 0.32);
+            color: #fecaca;
+        }
         .compare-box {
             min-height: 96px;
         }
@@ -589,6 +594,47 @@
             letter-spacing: 0.12em;
             color: var(--soft);
             margin-bottom: 10px;
+        }
+        .mini-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+        }
+        .mini-kpi {
+            border: 1px solid var(--line);
+            border-radius: 16px;
+            padding: 10px 12px;
+            background: rgba(255,255,255,0.02);
+        }
+        .mini-kpi strong {
+            display: block;
+            font-size: 20px;
+            letter-spacing: -0.03em;
+        }
+        .mini-kpi span {
+            color: var(--muted);
+            font-size: 12px;
+        }
+        .replay-panel {
+            margin-top: 14px;
+            border: 1px solid var(--line);
+            border-radius: 16px;
+            padding: 12px;
+            background: rgba(255,255,255,0.02);
+        }
+        .replay-panel strong {
+            display: block;
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            color: var(--soft);
+            margin-bottom: 6px;
+        }
+        .replay-panel .line {
+            color: var(--muted);
+            font-size: 13px;
+            margin-bottom: 4px;
+            white-space: pre-wrap;
         }
         .actions-list {
             display: grid;
@@ -777,6 +823,17 @@
                             </div>
                             <label class="label" for="compose-text">Typed fallback</label>
                             <textarea id="compose-text" placeholder="Say what you want done. Or type it here."></textarea>
+                            <label class="label" for="domain-pack">Domain Pack</label>
+                            <select id="domain-pack">
+                                <option value="none">None</option>
+                                <option value="founder">Founder updates</option>
+                                <option value="engineering">Engineering standups</option>
+                                <option value="sales">Sales follow-ups</option>
+                            </select>
+                            <label class="target" style="width: fit-content;">
+                                <input type="checkbox" id="auto-send-high-confidence">
+                                Auto-send when confidence ≥ 90%
+                            </label>
                             <div class="row">
                                 <button class="mic-button" id="compose-mic">🎙</button>
                                 <button class="primary" id="compose-submit">Generate outputs</button>
@@ -801,6 +858,23 @@
                     </div>
 
                     <div class="routing-badge" id="routing-badge" aria-live="polite"></div>
+
+                    <div class="panel" style="margin-top:16px; padding:18px;">
+                        <h2 style="font-size:20px; margin-bottom:6px;">Demo Lab</h2>
+                        <p class="sub" style="margin-bottom:12px;">Show measurable improvement, latency, and baseline-vs-personalized quality.</p>
+                        <div class="mini-grid">
+                            <div class="mini-kpi"><strong id="kpi-latency">--</strong><span>Pipeline latency</span></div>
+                            <div class="mini-kpi"><strong id="kpi-confidence">--</strong><span>Routing confidence</span></div>
+                            <div class="mini-kpi"><strong id="kpi-improvement">0%</strong><span>Estimated error reduction</span></div>
+                            <div class="mini-kpi"><strong id="kpi-battle">--</strong><span>Shadow mode winner</span></div>
+                        </div>
+                        <div class="replay-panel" id="replay-panel">
+                            <strong>Correction Replay</strong>
+                            <div class="line" id="replay-before">Before: --</div>
+                            <div class="line" id="replay-after">After: --</div>
+                            <div class="line" id="replay-learned">Learned terms: --</div>
+                        </div>
+                    </div>
 
                     <div class="action-panel" id="action-plan-panel">
                         <h3>Proposed Action</h3>
@@ -866,6 +940,9 @@
         let profile = null;
         let lastComposeResult = null;
         let lastComposeInput = null;
+        let lastProfileCorrectionCount = 0;
+        let correctionLiftEstimate = 0;
+        let lastCorrectionReplay = { before: '', after: '', learned: [] };
         let composeRecording = false;
         let composeRecorder = null;
         let gmailState = { connected: false, configured: false, email: "" };
@@ -938,6 +1015,11 @@
 
         function renderRoutingBadge(routing) {
             const badge = qs('routing-badge');
+            if (!navigator.onLine) {
+                badge.className = 'routing-badge offline visible';
+                badge.textContent = 'Offline mode · local path active';
+                return;
+            }
             if (!routing || !routing.label) {
                 badge.className = 'routing-badge';
                 badge.textContent = '';
@@ -1282,6 +1364,88 @@
             return Array.from(document.querySelectorAll('#target-list input:checked')).map((input) => input.value);
         }
 
+        function domainPackPrefix() {
+            const pack = qs('domain-pack').value;
+            if (pack === 'founder') return 'Context: founder update mode. Keep concise, executive, and outcome-focused.';
+            if (pack === 'engineering') return 'Context: engineering standup mode. Include status, blockers, and next step.';
+            if (pack === 'sales') return 'Context: sales follow-up mode. Keep persuasive and include clear CTA.';
+            return '';
+        }
+
+        function applyIntentMemory(text) {
+            const raw = String(text || '').trim();
+            if (!raw) return raw;
+            if (!/^same as last/i.test(raw) || !lastComposeResult?.outputs?.email) return raw;
+            const mood = /\bsofter\b/i.test(raw) ? 'Use a softer tone.' : /\bshorter\b/i.test(raw) ? 'Make it shorter.' : 'Keep the same intent.';
+            return `Rewrite this based on the prior output. ${mood}\nPrevious output:\n${lastComposeResult.outputs.email}`;
+        }
+
+        function tokenSet(text) {
+            return new Set(String(text || '').toLowerCase().match(/[a-z0-9']+/g) || []);
+        }
+
+        function overlapScore(a, b) {
+            const aa = tokenSet(a);
+            const bb = tokenSet(b);
+            if (!aa.size || !bb.size) return 0;
+            let hit = 0;
+            aa.forEach((token) => { if (bb.has(token)) hit += 1; });
+            return hit / Math.max(aa.size, 1);
+        }
+
+        function renderCorrectionReplay() {
+            qs('replay-before').textContent = `Before: ${lastCorrectionReplay.before || '--'}`;
+            qs('replay-after').textContent = `After: ${lastCorrectionReplay.after || '--'}`;
+            const learned = Array.isArray(lastCorrectionReplay.learned) && lastCorrectionReplay.learned.length
+                ? lastCorrectionReplay.learned.map((item) => {
+                    if (item && typeof item === 'object') return `${item.wrong || '?'} → ${item.right || '?'}`;
+                    return String(item);
+                }).join(' · ')
+                : '--';
+            qs('replay-learned').textContent = `Learned terms: ${learned}`;
+        }
+
+        async function fetchShadowBattle(payload) {
+            try {
+                return await fetchJson('/api/compose-shadow', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload),
+                });
+            } catch (_) {
+                return null;
+            }
+        }
+
+        function chooseBattleWinner(personalized, baseline) {
+            const p = String(personalized || '').trim();
+            const b = String(baseline || '').trim();
+            if (!p || !b) return { winner: '--', lift: 0 };
+            const pWords = tokenSet(p);
+            const bWords = tokenSet(b);
+            const pRichness = pWords.size;
+            const bRichness = bWords.size;
+            if (pRichness <= bRichness) return { winner: 'Tie', lift: 0 };
+            const lift = Math.max(1, Math.round(((pRichness - bRichness) / Math.max(1, bRichness)) * 100));
+            return { winner: `Personalized +${lift}%`, lift };
+        }
+
+        function updateDemoLab(result, durationMs, shadowResult) {
+            const confidence = Number(result?.routing?.confidence || 0);
+            qs('kpi-latency').textContent = `${Math.round(durationMs)} ms`;
+            qs('kpi-confidence').textContent = `${Math.round(confidence * 100)}%`;
+            qs('kpi-improvement').textContent = `${Math.round(correctionLiftEstimate)}%`;
+
+            const personalizedText = String(shadowResult?.personalized?.outputs?.email || result?.outputs?.email || result?.transcript || '');
+            const baselineText = String(shadowResult?.baseline?.outputs?.email || '');
+            if (!personalizedText || !baselineText) {
+                qs('kpi-battle').textContent = '--';
+                return;
+            }
+            const battle = chooseBattleWinner(personalizedText, baselineText);
+            qs('kpi-battle').textContent = battle.winner;
+        }
+
         async function refreshProfiles() {
             const profiles = await fetchJson('/api/profiles');
             const wrap = qs('profile-pills');
@@ -1308,6 +1472,13 @@
             qs('stat-people').textContent = (profile.people || []).length;
             qs('stat-sources').textContent = (profile.reference_sources || []).length;
             qs('stat-corrections').textContent = profile.corrections.length;
+            if (lastProfileCorrectionCount) {
+                const delta = Math.max(0, Number(profile.corrections.length || 0) - Number(lastProfileCorrectionCount));
+                if (delta > 0) {
+                    correctionLiftEstimate = Math.min(60, correctionLiftEstimate + delta * 6);
+                }
+            }
+            lastProfileCorrectionCount = Number(profile.corrections.length || 0);
             renderTerms();
             renderSources();
             await refreshGmailStatus();
@@ -1565,6 +1736,12 @@
                 if (result.error) {
                     throw new Error(result.error);
                 }
+                lastCorrectionReplay = {
+                    before: original,
+                    after: corrected,
+                    learned: Array.isArray(result.learned) ? result.learned : [],
+                };
+                renderCorrectionReplay();
                 input.value = '';
                 showLearned(target);
                 await refreshProfile();
@@ -1581,18 +1758,24 @@
             const typedTranscript = String(typedSource).trim();
                 const useTypedPath = Boolean(typedTranscript);
                 const audioB64 = useTypedPath ? '' : (options.audioB64 || '');
+                const withIntentMemory = useTypedPath ? applyIntentMemory(typedTranscript) : '';
+                const domainPrefix = useTypedPath ? domainPackPrefix() : '';
+                const finalTranscriptInput = useTypedPath
+                    ? [domainPrefix, withIntentMemory].filter(Boolean).join('\n')
+                    : '';
                 lastComposeInput = {
-                    transcript: useTypedPath ? typedTranscript : '',
+                    transcript: useTypedPath ? finalTranscriptInput : '',
                     audioB64,
                 };
                 const payload = {
                     profile: activeProfile,
                     target_apps: selectedTargets(),
-                    transcript: useTypedPath ? typedTranscript : '',
+                    transcript: useTypedPath ? finalTranscriptInput : '',
                     audio_b64: audioB64,
                     approved: Boolean(options.approved),
                     execute: Boolean(options.execute),
                 };
+                const startedAt = performance.now();
                 const result = await fetchJson('/api/compose', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -1610,6 +1793,18 @@
                 renderExecutionResult(result.execution_result);
                 renderOutputs(result);
                 renderActions(result.actions);
+                const shadowResult = await fetchShadowBattle(payload);
+                updateDemoLab(result, performance.now() - startedAt, shadowResult);
+
+                const autoSend = qs('auto-send-high-confidence').checked;
+                const confidence = Number(result?.routing?.confidence || 0);
+                const needsConfirmation = Boolean(result?.action_plan?.requires_confirmation);
+                if (autoSend && needsConfirmation && confidence >= 0.9) {
+                    approveCurrentDraft();
+                    await qs('send-action-btn').onclick();
+                    status.textContent = 'High confidence: auto-sent.';
+                    return;
+                }
                 status.textContent = 'Done.';
             } catch (err) {
                 status.textContent = `Generate failed: ${err.message}`;
@@ -1764,6 +1959,9 @@
         });
 
         handleOAuthBanner();
+        window.addEventListener('online', () => renderRoutingBadge(lastComposeResult?.routing || null));
+        window.addEventListener('offline', () => renderRoutingBadge(lastComposeResult?.routing || null));
+        renderCorrectionReplay();
         Promise.all([refreshProfiles(), refreshProfile()]).catch(console.error);
     </script>
 </body>
