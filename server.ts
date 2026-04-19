@@ -42,6 +42,24 @@ function slugify(name: string) {
     return name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "") || "default";
 }
 
+function isValidProfileListItem(item: any) {
+    if (!item || typeof item !== "object") return false;
+    const rawName = typeof item.name === "string" ? item.name.trim() : "";
+    const rawId = typeof item.id === "string" ? item.id.trim() : "";
+    const lowered = rawName.toLowerCase();
+    if (!rawName || rawName === "[object Object]") return false;
+    if (!rawId || rawId === "object-object") return false;
+    if (lowered === "object" || lowered.includes("[object object]")) return false;
+    if (rawId === "default") return true;
+    const hasSignal =
+        Number(item.terms || 0) > 0 ||
+        Number(item.sources || 0) > 0 ||
+        Number(item.people || 0) > 0 ||
+        Number(item.corrections || 0) > 0;
+    if (!hasSignal) return false;
+    return true;
+}
+
 function profilePath(nameOrId: string) {
     return `${PROFILES_DIR}/${slugify(nameOrId)}.voicepassport.json`;
 }
@@ -333,7 +351,9 @@ Bun.serve({
         "/api/profiles": {
             async GET() {
                 const raw = await runBrain(["profiles"]);
-                return Response.json(parseLastJson(raw) || []);
+                const parsed = parseLastJson(raw);
+                const list = Array.isArray(parsed) ? parsed.filter(isValidProfileListItem) : [];
+                return Response.json(list);
             },
             async POST(req) {
                 const body = (await req.json()) as { name?: string };
@@ -536,6 +556,8 @@ Bun.serve({
                             text?: string;
                             audio_b64?: string;
                             confirmed?: boolean;
+                            approved?: boolean;
+                            execute?: boolean;
                         };
                         id = typeof body.profile === "string" ? body.profile : String(body.profile?.id || "default");
                         profile = await loadProfile(id);
@@ -549,6 +571,8 @@ Bun.serve({
                             profile,
                             target_apps: targets,
                             confirmed: Boolean(body.confirmed),
+                            approved: Boolean(body.approved),
+                            execute: Boolean(body.execute),
                         };
                     } else {
                         const form = await req.formData();
@@ -562,6 +586,8 @@ Bun.serve({
                             profile,
                             target_apps: targets,
                             confirmed: false,
+                            approved: false,
+                            execute: false,
                         };
 
                         if (file && typeof file !== "string" && file.size) {
@@ -579,6 +605,7 @@ Bun.serve({
                     try {
                         const rawCompose = await runComposePayload(payload);
                         const composed = parseLastJson(rawCompose) || {};
+                        console.log("[/api/compose] response:", JSON.stringify(composed, null, 2));
                         return Response.json({
                             transcript: composed.transcript || typedText,
                             stt: composed.stt || null,

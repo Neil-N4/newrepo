@@ -1,7 +1,8 @@
 """Hybrid routing for Voice Right.
 
-FunctionGemma handles lightweight, structured local routing. Complex or
-low-confidence requests fall back to Gemini cloud generation.
+FunctionGemma handles lightweight, structured local routing. Gemma 4 E4B is the
+primary local writer for polished outputs. Gemini is retained only as a cloud
+fallback when the local writer fails.
 """
 
 from __future__ import annotations
@@ -24,6 +25,7 @@ except ImportError:
 
 
 FUNCTION_GEMMA_MODEL_ID = "google/functiongemma-270m-it"
+GEMMA_4_E4B_MODEL_PATH = Path.home() / "Documents" / "cactus" / "weights" / "gemma-4-e4b-it"
 ROUTING_THRESHOLD = 0.65
 NOISY_TERM_EXACT = {
     "gmail", "inbox", "starred", "snoozed", "sent", "drafts", "purchases", "more",
@@ -86,6 +88,16 @@ def _load_functiongemma() -> Any:
     with _MODEL_LOCK:
         model_path = ensure_model(FUNCTION_GEMMA_MODEL_ID)
         handle = cactus_init(str(model_path), None, False)
+        _MODEL_HANDLES.append(handle)
+        return handle
+
+
+@lru_cache(maxsize=1)
+def _load_gemma4_e4b() -> Any:
+    with _MODEL_LOCK:
+        if not GEMMA_4_E4B_MODEL_PATH.exists():
+            raise RuntimeError(f"Gemma 4 E4B model not found at {GEMMA_4_E4B_MODEL_PATH}")
+        handle = cactus_init(str(GEMMA_4_E4B_MODEL_PATH), None, False)
         _MODEL_HANDLES.append(handle)
         return handle
 
@@ -411,11 +423,43 @@ def _looks_like_malformed_local(text: str) -> bool:
         "i will respond in a structured format",
         "purpose provided",
         "not applicable i will only respond",
+        '"note_response"',
+        '"note":',
+        "result = {}",
+        "$$$$$",
+        "regarding the request",
+        "chias,{",
     )
     if any(marker in lowered for marker in malformed_markers):
         return True
     if len(lowered) > 300 and lowered.count("i will respond") >= 2:
         return True
+    if len(lowered) > 250 and lowered.count('"note"') >= 4:
+        return True
+    if len(lowered) > 250 and lowered.count("ikon pass") >= 8:
+        return True
+    if len(lowered) > 200 and lowered.count("{") >= 3 and lowered.count("}") >= 3:
+        return True
+    return False
+
+
+def _looks_like_malformed_function_calls(function_calls: list[dict[str, Any]]) -> bool:
+    for call in function_calls:
+        if not isinstance(call, dict):
+            continue
+        args = call.get("arguments", {})
+        if not isinstance(args, dict):
+            continue
+        for value in args.values():
+            text = str(value or "").strip().lower()
+            if not text:
+                continue
+            if any(marker in text for marker in ('"note_response"', '"note":', "result = {}", "$$$$$", "regarding the request", "chias,{")):
+                return True
+            if len(text) > 250 and text.count("ikon pass") >= 6:
+                return True
+            if len(text) > 200 and text.count("{") >= 3 and text.count("}") >= 3:
+                return True
     return False
 
 
@@ -469,6 +513,15 @@ def _known_people(profile_context: dict) -> list[str]:
 
 def _extract_recipient(transcript: str, profile_context: dict) -> str:
     safe_transcript = str(transcript or "").strip()
+    greeting_match = re.match(r"^\s*(?:hi|hey|hello)\s+([A-Za-z]+)\b", safe_transcript, flags=re.IGNORECASE)
+    if greeting_match:
+        candidate = greeting_match.group(1).strip()
+        if candidate and candidate.lower() not in {"team", "there", "everyone"}:
+            for person_name in _known_people(profile_context):
+                if person_name.lower() == candidate.lower():
+                    return person_name
+            return candidate.capitalize()
+
     direct_match = re.search(r"\b(tell|email|message|text|update)\s+([A-Za-z]+)", safe_transcript, flags=re.IGNORECASE)
     if direct_match:
         candidate = direct_match.group(2).strip()
@@ -492,6 +545,11 @@ def _extract_recipient(transcript: str, profile_context: dict) -> str:
 
 def _extract_message_body(transcript: str, recipient: str) -> str:
     safe_transcript = str(transcript or "").strip()
+    greeting_pattern = rf"^\s*(?:hi|hey|hello)\s+{re.escape(recipient)}\s*(?:,)?\s+(.+)$"
+    greeting_match = re.search(greeting_pattern, safe_transcript, flags=re.IGNORECASE)
+    if greeting_match:
+        return greeting_match.group(1).strip().rstrip(".")
+
     patterns = [
         rf"\btell\s+{re.escape(recipient)}\s+(?:that\s+)?(.+)$",
         rf"\bemail\s+{re.escape(recipient)}\s+(?:that\s+)?(.+)$",
@@ -530,10 +588,30 @@ def _title_case_name(value: str) -> str:
     return " ".join(part.capitalize() for part in str(value or "").split())
 
 
+def _is_greeting_direct_message(transcript: str, profile_context: dict) -> bool:
+    safe_transcript = str(transcript or "").strip()
+    greeting_match = re.match(r"^\s*(?:hi|hey|hello)\s+([A-Za-z]+)\b", safe_transcript, flags=re.IGNORECASE)
+    if not greeting_match:
+        return False
+    candidate = greeting_match.group(1).strip().lower()
+    return any(person.lower() == candidate for person in _known_people(profile_context))
+
+
+def _guess_subject(body: str) -> str:
+    lowered = str(body or "").lower()
+    if "meeting" in lowered:
+        return "Meeting Update"
+    if "launch" in lowered:
+        return "Launch Update"
+    if "signed" in lowered and "document" in lowered:
+        return "Document signed"
+    return "Quick update"
+
+
 def _heuristic_route(transcript: str, profile_context: dict, target_apps: list[str]) -> dict[str, Any] | None:
     safe_transcript = str(transcript or "").strip()
     lowered = safe_transcript.lower()
-    if not any(keyword in lowered for keyword in ("tell ", "email ", "message ", "text ")):
+    if not any(keyword in lowered for keyword in ("tell ", "email ", "message ", "text ")) and not _is_greeting_direct_message(safe_transcript, profile_context):
         return None
 
     recipient = _title_case_name(_extract_recipient(safe_transcript, profile_context))
@@ -551,22 +629,25 @@ def _heuristic_route(transcript: str, profile_context: dict, target_apps: list[s
             email_body = email_body[0].upper() + email_body[1:]
         if email_body and not email_body.endswith((".", "!", "?")):
             email_body = f"{email_body}."
+        subject = _guess_subject(email_body)
         function_calls.append(
             {
                 "name": "send_email",
                 "arguments": {
                     "to": recipient,
-                    "subject": "Quick update",
-                    "body": email_body[0].upper() + email_body[1:],
+                    "subject": subject,
+                    "body": email_body,
                 },
             }
         )
-        outputs["email"] = email_body
+        outputs["email"] = f"Subject: {subject}\n\nHi {recipient},\n\n{email_body}\n\nThanks,\nNeil"
 
     if "message" in requested_apps:
         message_body = body
         if message_body and message_body[0].islower():
             message_body = message_body[0].upper() + message_body[1:]
+        if message_body and not message_body.endswith((".", "!", "?")):
+            message_body = f"{message_body}."
         function_calls.append(
             {
                 "name": "send_message",
@@ -576,7 +657,7 @@ def _heuristic_route(transcript: str, profile_context: dict, target_apps: list[s
                 },
             }
         )
-        outputs["message"] = message_body
+        outputs["message"] = f"Hey {recipient}, {message_body}"
 
     if "slack" in requested_apps:
         slack_message = f"{recipient}: {body}"
@@ -732,6 +813,111 @@ Example output:
 """.strip()
 
 
+def _gemma4_prompt(transcript: str, profile_context: dict, target_apps: list[str]) -> str:
+    profile_terms = _profile_terms_clean(profile_context, transcript)
+    profile_people = _profile_people_clean(profile_context)
+    corrections = _relevant_corrections(profile_context, transcript)
+    style_example = _style_example(profile_context)
+    return f"""
+You are Voice Right's local writing model running on-device.
+
+Transcript:
+{transcript}
+
+Profile vocabulary:
+{json.dumps(profile_terms)}
+
+Profile people:
+{json.dumps(profile_people)}
+
+Known phrasing corrections:
+{json.dumps(corrections)}
+
+Style example from the user:
+{style_example or "No style example available."}
+
+Target apps:
+{json.dumps(target_apps)}
+
+Return JSON only as a single object with these keys:
+- summary
+- intent
+- email (only if requested)
+- message (only if requested)
+- slack (only if requested)
+- discord (only if requested)
+
+Style each app appropriately:
+- email: professional
+- message: casual, warm, can include emoji
+- slack: concise and direct
+- discord: short and fun
+
+Requirements:
+- Use the user's exact vocabulary and capitalization when terms match, e.g. YBuffet, Ikon Pass.
+- Reuse known correction phrasing when relevant.
+- Do not echo the user's request verbatim unless it is already perfect output copy.
+- If the transcript asks for a team update, address the audience as Team.
+- Keep outputs concise and directly usable.
+
+Example output:
+{{
+  "summary": "Draft an update to Team about the YBuffet launch.",
+  "intent": "draft_update",
+  "email": "Subject: Quick update\\n\\nHi Team,\\n\\nWe’re live with the YBuffet launch today.\\n\\nThanks,\\nNeil",
+  "message": "Hey Team, We’re live with the YBuffet launch today 😊"
+}}
+""".strip()
+
+
+def _call_gemma4_writer(transcript: str, profile_context: dict, target_apps: list[str]) -> dict[str, Any]:
+    model = _load_gemma4_e4b()
+    messages = json.dumps(
+        [
+            {"role": "system", "content": "Return only valid JSON. Do not include markdown fences or explanations."},
+            {"role": "user", "content": _gemma4_prompt(transcript, profile_context, target_apps)},
+        ]
+    )
+    result = json.loads(
+        cactus_complete(
+            model,
+            messages,
+            json.dumps({"max_tokens": 700, "temperature": 0.35}),
+            None,
+            None,
+        )
+    )
+    if not result.get("success"):
+        raise RuntimeError(result.get("error") or "Gemma 4 E4B generation failed")
+    text = str(result.get("response", "")).strip()
+    if not text:
+        raise RuntimeError("Gemma 4 E4B returned empty output")
+    try:
+        parsed = json.loads(text)
+    except json.JSONDecodeError as exc:
+        raise RuntimeError(f"Gemma 4 E4B returned non-JSON output: {exc}") from exc
+    if not isinstance(parsed, dict):
+        raise RuntimeError("Gemma 4 E4B returned a non-object payload")
+    summary = str(parsed.get("summary", "")).strip()
+    intent = str(parsed.get("intent", "")).strip()
+    if not summary and not intent:
+        raise RuntimeError("Gemma 4 E4B returned no summary or intent")
+    malformed_markers = ("$$$$", '"note_response"', '"note":', "result = {}", "regarding the request")
+    for key in [app for app in target_apps if str(app).strip()] + ["summary", "intent"]:
+        value = str(parsed.get(str(key), "")).strip()
+        if any(marker in value.lower() for marker in [m.lower() for m in malformed_markers]):
+            raise RuntimeError("Gemma 4 E4B returned malformed writer content")
+    if any(not str(parsed.get(str(app), "")).strip() for app in target_apps if str(app).strip()):
+        raise RuntimeError("Gemma 4 E4B did not return all requested outputs")
+    return {
+        "source": "local",
+        "confidence": 0.94,
+        "routing_label": "⚡ On-device · Gemma 4 E4B · 94% confidence",
+        "function_calls": [],
+        "response": text,
+    }
+
+
 def _call_gemini(transcript: str, profile_context: dict, target_apps: list[str]) -> dict[str, Any]:
     api_key = os.getenv("GEMINI_API_KEY", "").strip()
     if not api_key:
@@ -808,9 +994,12 @@ def route(transcript: str, profile_context: dict, target_apps: list[str]) -> dic
 
     if _should_force_cloud(safe_transcript):
         try:
-            return _call_gemini(safe_transcript, profile_context or {}, target_apps or [])
+            return _call_gemma4_writer(safe_transcript, profile_context or {}, target_apps or [])
         except Exception:
-            return _cloud_style_fallback(safe_transcript, profile_context or {}, target_apps or [])
+            try:
+                return _call_gemini(safe_transcript, profile_context or {}, target_apps or [])
+            except Exception:
+                return _cloud_style_fallback(safe_transcript, profile_context or {}, target_apps or [])
 
     heuristic_result = _heuristic_route(safe_transcript, profile_context or {}, target_apps or [])
     if heuristic_result is not None:
@@ -834,6 +1023,9 @@ def route(transcript: str, profile_context: dict, target_apps: list[str]) -> dic
     if _looks_like_malformed_local(str(local_result.get("response", ""))):
         local_result["cloud_handoff"] = True
         local_result["confidence"] = 0.0
+    if _looks_like_malformed_function_calls(local_result.get("function_calls", []) or []):
+        local_result["cloud_handoff"] = True
+        local_result["confidence"] = 0.0
 
     if (
         local_result.get("confidence", 0.0) >= ROUTING_THRESHOLD
@@ -848,7 +1040,10 @@ def route(transcript: str, profile_context: dict, target_apps: list[str]) -> dic
         }
 
     try:
-        cloud_result = _call_gemini(safe_transcript, profile_context or {}, target_apps or [])
-        return cloud_result
-    except Exception as exc:
-        return _cloud_style_fallback(safe_transcript, profile_context or {}, target_apps or [])
+        writer_result = _call_gemma4_writer(safe_transcript, profile_context or {}, target_apps or [])
+        return writer_result
+    except Exception:
+        try:
+            return _call_gemini(safe_transcript, profile_context or {}, target_apps or [])
+        except Exception:
+            return _cloud_style_fallback(safe_transcript, profile_context or {}, target_apps or [])

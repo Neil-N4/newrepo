@@ -224,6 +224,72 @@ def _polish_output(app: str, text: str) -> str:
     return str(text or "").strip()
 
 
+def _normalize_for_compare(text: str) -> str:
+    return re.sub(r"[^a-z0-9]+", " ", str(text or "").lower()).strip()
+
+
+def _looks_like_transcript_echo(value: str, transcript: str) -> bool:
+    candidate = _normalize_for_compare(value)
+    source = _normalize_for_compare(transcript)
+    if not candidate:
+        return True
+    if candidate == source:
+        return True
+    if len(candidate) >= 12 and candidate in source:
+        return True
+    return False
+
+
+def _render_email_from_args(args: dict[str, Any], profile: dict[str, Any]) -> str:
+    recipient = str(args.get("to", "")).strip() or "there"
+    subject = str(args.get("subject", "")).strip() or "Quick update"
+    body = str(args.get("body", "")).strip() or "Quick update."
+    if body and body[0].islower():
+        body = body[0].upper() + body[1:]
+    if body and not body.endswith((".", "!", "?")):
+        body = f"{body}."
+    signoff = actions._email_signoff(profile)  # type: ignore[attr-defined]
+    return f"Subject: {subject}\n\nHi {recipient},\n\n{body}\n\n{signoff}"
+
+
+def _render_message_from_args(args: dict[str, Any], transcript: str) -> str:
+    recipient = str(args.get("to", "")).strip() or "there"
+    body = str(args.get("body", "")).strip() or str(transcript or "").strip()
+    body = re.sub(r"^(Hey|Hi)\s+[A-Z][A-Za-z]+,\s*", "", body).strip()
+    if body and body[0].islower():
+        body = body[0].upper() + body[1:]
+    if body and not body.endswith((".", "!", "?")):
+        body = f"{body}."
+    return f"Hey {recipient}, {body}".strip()
+
+
+def _synthesize_outputs_from_calls(
+    outputs: dict[str, str],
+    function_calls: list[dict[str, Any]],
+    transcript: str,
+    profile: dict[str, Any],
+) -> dict[str, str]:
+    synthesized = dict(outputs)
+    for call in function_calls:
+        if not isinstance(call, dict):
+            continue
+        name = str(call.get("name", "")).strip()
+        args = call.get("arguments", {}) if isinstance(call.get("arguments"), dict) else {}
+        if name == "send_email":
+            current = str(synthesized.get("email", "")).strip()
+            if _looks_like_transcript_echo(current, transcript):
+                synthesized["email"] = _render_email_from_args(args, profile)
+        elif name == "send_message":
+            current = str(synthesized.get("message", "")).strip()
+            if _looks_like_transcript_echo(current, transcript):
+                synthesized["message"] = _render_message_from_args(args, transcript)
+        elif name == "post_slack":
+            current = str(synthesized.get("slack", "")).strip()
+            if _looks_like_transcript_echo(current, transcript):
+                synthesized["slack"] = str(args.get("message", "")).strip() or str(transcript or "").strip()
+    return synthesized
+
+
 def _finalize_outputs(outputs: dict[str, str], transcript: str) -> dict[str, str]:
     finalized: dict[str, str] = {}
     for app, value in outputs.items():
@@ -399,15 +465,25 @@ def _infer_recipient(transcript: str, function_calls: list[dict[str, Any]], outp
             if value:
                 return value
 
-    lowered = str(transcript or "").lower()
+    raw_transcript = str(transcript or "").strip()
+    lowered = raw_transcript.lower()
     if "team" in lowered:
         return "Team"
+    leading_name = re.match(r"^\s*([A-Z][a-z]+)\b", raw_transcript)
+    if leading_name:
+        candidate = leading_name.group(1).strip()
+        blocked = {"Hi", "Hey", "Hello", "Email", "Message", "Text", "Send", "Tell", "Notify", "Update"}
+        if candidate not in blocked:
+            return candidate
     reviewer_match = re.search(r"\bmy\s+([a-z]+)\b", lowered)
     if reviewer_match:
         return reviewer_match.group(1).title()
-    direct_match = re.search(r"\b(?:tell|email|message|text|update|notify)\s+([A-Z][a-z]+|[a-z]+)", str(transcript or ""))
+    direct_match = re.search(r"\b(?:tell|email|message|text|notify)\s+([A-Z][a-z]+|[a-z]+)", raw_transcript)
     if direct_match:
         return direct_match.group(1).title()
+    to_match = re.search(r"\bto\s+([A-Z][a-z]+|team)\b", raw_transcript)
+    if to_match:
+        return to_match.group(1).title()
 
     for app_value in outputs.values():
         greeting_match = re.search(r"\b(?:Hi|Hello|Hey)\s+([A-Z][A-Za-z]+)", str(app_value or ""))
@@ -488,10 +564,14 @@ def _build_action_plan(
     selected_apps = [str(app).strip().lower() for app in target_apps if str(app).strip()]
     primary_app = next((app for app in selected_apps if app), "email")
     lowered_transcript = str(transcript or "").lower()
+    greeting_direct_message = bool(re.match(r"^\s*(?:hi|hey|hello)\s+[a-z][a-z'-]*\b", lowered_transcript))
     preferred_name = ""
-    if "message" in selected_apps and re.search(r"\b(tell|text|message|dm|ping)\b", lowered_transcript):
+    if "message" in selected_apps and (
+        re.search(r"\b(tell|text|message|dm|ping)\b", lowered_transcript)
+        or greeting_direct_message
+    ):
         preferred_name = "send_message"
-        primary_app = "message"
+        primary_app = "messages"
     elif "slack" in selected_apps and re.search(r"\bslack\b", lowered_transcript):
         preferred_name = "post_slack"
         primary_app = "slack"
@@ -509,16 +589,17 @@ def _build_action_plan(
     if str(routing_result.get("source", "")).lower() == "cloud":
         confidence = max(confidence, 0.9)
 
-    requires_confirmation = primary_name in {"send_email", "send_message", "post_slack"}
+    effective_name = primary_name or ("send_message" if primary_app == "messages" else (f"send_{primary_app}" if primary_app else "draft_output"))
+    requires_confirmation = effective_name in {"send_email", "send_message", "post_slack"}
     route_choice = _choose_route_label(confidence)
     if requires_confirmation and route_choice == "local":
         route_choice = "local_with_confirmation"
 
-    action_name = _action_label(primary_name or (f"send_{primary_app}" if primary_app else "draft_output"))
+    action_name = _action_label(effective_name)
     summary = f"{action_name.replace('_', ' ').title()} for {recipient}"
     if primary_app == "slack":
         summary = f"Post Slack update to {recipient}"
-    elif primary_app == "message":
+    elif primary_app == "messages":
         summary = f"Send message to {recipient}"
     elif primary_app == "email":
         summary = f"Send email to {recipient}"
@@ -683,6 +764,7 @@ def compose_payload(payload: dict[str, Any]) -> dict[str, Any]:
         action_plan["status"] = "awaiting_user_confirmation"
 
     _merge_action_outputs(outputs, action_results, function_calls)
+    outputs = _synthesize_outputs_from_calls(outputs, function_calls, transcript_text, profile)
     outputs = _finalize_outputs(outputs, transcript_text)
     outputs = {
         app: _apply_corrections(_canonicalize_terms(value, profile, allow_fuzzy=False), profile)

@@ -10,61 +10,217 @@
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
         :root {
-            --bg: #0a0d10;
-            --panel: rgba(255,255,255,0.05);
-            --panel-strong: rgba(255,255,255,0.08);
-            --line: rgba(255,255,255,0.1);
-            --text: #f5f7fb;
-            --muted: #a8b0be;
-            --soft: #657081;
-            --mint: #1fd19b;
-            --mint-dim: rgba(31,209,155,0.14);
+            --bg: #000000;
+            --bg-elevated: #050505;
+            --panel: rgba(12, 12, 13, 0.94);
+            --panel-strong: rgba(18, 18, 19, 0.96);
+            --panel-soft: rgba(255,255,255,0.012);
+            --line: rgba(255,255,255,0.08);
+            --line-strong: rgba(255,255,255,0.16);
+            --text: #f6f6f7;
+            --muted: #afb2b8;
+            --soft: #74777e;
+            --mint: #67e7ce;
+            --mint-bright: #a4f5e5;
+            --mint-dim: rgba(103,231,206,0.1);
+            --violet: #9f8dff;
+            --violet-dim: rgba(159,141,255,0.12);
             --rose: #ff5f72;
-            --sky: #7cc7ff;
+            --sky: #76b9ff;
+            --shadow-lg: 0 32px 100px rgba(0,0,0,0.68);
+            --shadow-md: 0 16px 36px rgba(0,0,0,0.4);
+            --radius-xl: 34px;
+            --radius-lg: 26px;
         }
         html, body {
-            background:
-                radial-gradient(circle at top, rgba(124,199,255,0.12), transparent 35%),
-                radial-gradient(circle at 20% 20%, rgba(31,209,155,0.1), transparent 28%),
-                var(--bg);
+            background: var(--bg);
+            background-attachment: fixed;
             color: var(--text);
             min-height: 100vh;
             font-family: "Plus Jakarta Sans", system-ui, sans-serif;
             -webkit-font-smoothing: antialiased;
         }
-        body { padding: 28px 16px 64px; }
-        .app { width: 100%; max-width: 1180px; margin: 0 auto; }
+        body {
+            padding: 20px 18px 72px;
+            position: relative;
+            overflow-x: hidden;
+        }
+        body::before,
+        body::after {
+            content: "";
+            position: fixed;
+            border-radius: 999px;
+            pointer-events: none;
+            z-index: 0;
+            filter: blur(20px);
+            opacity: 0.85;
+        }
+        body::before {
+            width: 620px;
+            height: 620px;
+            top: -220px;
+            right: -140px;
+            background: radial-gradient(circle, rgba(255,255,255,0.11), rgba(255,255,255,0.018) 40%, transparent 70%);
+        }
+        body::after {
+            width: 420px;
+            height: 420px;
+            left: -120px;
+            top: 280px;
+            background: radial-gradient(circle, rgba(255,255,255,0.06), rgba(255,255,255,0.012) 44%, transparent 72%);
+        }
+        .app {
+            position: relative;
+            z-index: 1;
+            width: 100%;
+            max-width: 1320px;
+            margin: 0 auto;
+        }
+        .topbar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 20px;
+            margin-bottom: 22px;
+        }
+        .brand {
+            display: inline-flex;
+            align-items: center;
+            gap: 14px;
+            color: var(--text);
+            text-decoration: none;
+        }
+        .brand-mark {
+            width: 44px;
+            height: 44px;
+            border-radius: 999px;
+            border: 1px solid rgba(255,255,255,0.18);
+            display: grid;
+            place-items: center;
+            position: relative;
+            background: radial-gradient(circle at 50% 35%, rgba(255,255,255,0.2), rgba(255,255,255,0.03) 52%, transparent 70%);
+            box-shadow:
+                inset 0 1px 0 rgba(255,255,255,0.08),
+                0 0 0 10px rgba(255,255,255,0.01);
+        }
+        .brand-mark::after {
+            content: "";
+            width: 10px;
+            height: 10px;
+            border-radius: 999px;
+            background: linear-gradient(135deg, var(--sky), var(--mint));
+            box-shadow: 0 0 18px rgba(92,227,199,0.28);
+        }
+        .brand-copy strong {
+            display: block;
+            font-size: 14px;
+            letter-spacing: 0.24em;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+        .brand-copy span {
+            display: block;
+            margin-top: 2px;
+            color: var(--soft);
+            font-size: 12px;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+        }
+        .top-actions {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+        .shell-pill {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 54px;
+            padding: 0 24px;
+            border-radius: 999px;
+            border: 1px solid rgba(255,255,255,0.12);
+            background: rgba(255,255,255,0.015);
+            color: var(--text);
+            text-decoration: none;
+            font-size: 14px;
+            letter-spacing: 0.06em;
+            text-transform: uppercase;
+            box-shadow:
+                inset 0 1px 0 rgba(255,255,255,0.04),
+                0 8px 18px rgba(0,0,0,0.22);
+        }
+        .shell-pill.cta {
+            background: linear-gradient(135deg, #72b8ff, #6ff1cd);
+            color: #051714;
+            border-color: rgba(255,255,255,0.18);
+            font-weight: 700;
+            box-shadow: 0 12px 34px rgba(111,241,205,0.18);
+        }
         .hero {
             display: grid;
-            grid-template-columns: 1.3fr 1fr;
-            gap: 18px;
+            grid-template-columns: 1.5fr 0.9fr;
+            gap: 22px;
             margin-bottom: 18px;
         }
         .hero-card, .panel {
             background: var(--panel);
             border: 1px solid var(--line);
-            border-radius: 24px;
+            border-radius: var(--radius-xl);
             backdrop-filter: blur(16px);
+            box-shadow: var(--shadow-md);
         }
-        .hero-card { padding: 28px; min-height: 220px; }
-        h1 { font-size: clamp(36px, 5vw, 58px); line-height: 0.94; letter-spacing: -0.04em; max-width: 760px; }
+        .hero-card {
+            position: relative;
+            overflow: hidden;
+            padding: 32px 34px 30px;
+            min-height: 240px;
+            box-shadow: var(--shadow-lg);
+            background:
+                radial-gradient(circle at 68% 10%, rgba(255,255,255,0.12), transparent 22%),
+                radial-gradient(circle at 22% 84%, rgba(255,255,255,0.04), transparent 24%),
+                linear-gradient(180deg, rgba(255,255,255,0.01), rgba(255,255,255,0.004)),
+                rgba(8, 8, 9, 0.98);
+        }
+        .hero-card::before {
+            content: "";
+            position: absolute;
+            inset: 0;
+            background:
+                radial-gradient(circle at 76% 18%, rgba(255,255,255,0.12), transparent 16%),
+                radial-gradient(circle at 88% 72%, rgba(255,255,255,0.08), transparent 24%);
+            pointer-events: none;
+            mix-blend-mode: screen;
+        }
+        h1 {
+            font-size: clamp(32px, 4vw, 62px);
+            line-height: 0.96;
+            letter-spacing: -0.06em;
+            max-width: 780px;
+            position: relative;
+            font-weight: 700;
+        }
         .hero-card p {
-            margin-top: 16px;
+            position: relative;
+            margin-top: 18px;
             color: var(--muted);
-            max-width: 640px;
-            font-size: 17px;
-            line-height: 1.55;
+            max-width: 560px;
+            font-size: 15px;
+            line-height: 1.65;
         }
         .summary {
-            padding: 24px;
+            padding: 30px 28px;
             display: grid;
-            gap: 18px;
+            gap: 22px;
+            background:
+                linear-gradient(180deg, rgba(255,255,255,0.015), rgba(255,255,255,0.006)),
+                rgba(10, 10, 12, 0.96);
         }
         .eyebrow {
-            color: var(--mint);
+            color: #d9dde5;
             font-size: 12px;
-            font-weight: 700;
-            letter-spacing: 0.16em;
+            font-weight: 600;
+            letter-spacing: 0.14em;
             text-transform: uppercase;
         }
         .stat-grid {
@@ -73,16 +229,17 @@
             gap: 12px;
         }
         .stat {
-            background: rgba(255,255,255,0.04);
-            border: 1px solid var(--line);
-            border-radius: 18px;
-            padding: 14px;
+            background: rgba(255,255,255,0.022);
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 24px;
+            padding: 18px 18px 16px;
         }
         .stat strong {
             display: block;
-            font-size: 26px;
-            font-weight: 800;
-            margin-bottom: 4px;
+            font-size: 34px;
+            font-weight: 700;
+            letter-spacing: -0.04em;
+            margin-bottom: 6px;
         }
         .stat span { color: var(--muted); font-size: 13px; }
         .flow {
@@ -92,38 +249,48 @@
             margin-bottom: 18px;
         }
         .flow-step {
-            padding: 14px 16px;
-            border-radius: 18px;
-            background: rgba(255,255,255,0.04);
-            border: 1px solid var(--line);
+            padding: 16px 20px 15px;
+            border-radius: 999px;
+            background: rgba(255,255,255,0.012);
+            border: 1px solid rgba(255,255,255,0.08);
         }
-        .flow-step strong { display: block; font-size: 14px; margin-bottom: 4px; }
-        .flow-step span { color: var(--muted); font-size: 12px; line-height: 1.4; }
+        .flow-step strong { display: block; font-size: 14px; margin-bottom: 6px; }
+        .flow-step span { color: var(--muted); font-size: 12px; line-height: 1.5; }
         .grid {
             display: grid;
-            grid-template-columns: minmax(320px, 360px) minmax(0, 1fr);
-            gap: 18px;
+            grid-template-columns: minmax(330px, 380px) minmax(0, 1fr);
+            gap: 22px;
             align-items: start;
         }
         .sidebar, .content {
             display: grid;
-            gap: 18px;
+            gap: 20px;
         }
-        .panel { padding: 22px; }
+        .sidebar {
+            position: sticky;
+            top: 22px;
+        }
+        .panel {
+            padding: 24px;
+            background:
+                linear-gradient(180deg, rgba(255,255,255,0.01), rgba(255,255,255,0.004)),
+                rgba(10, 10, 11, 0.96);
+        }
         .panel h2 {
-            font-size: 24px;
+            font-size: 26px;
             letter-spacing: -0.03em;
             margin-bottom: 8px;
+            font-weight: 700;
         }
         .panel p.sub {
             color: var(--muted);
             font-size: 14px;
-            line-height: 1.5;
+            line-height: 1.6;
             margin-bottom: 18px;
         }
         .label {
             font-size: 12px;
-            font-weight: 700;
+            font-weight: 600;
             letter-spacing: 0.12em;
             text-transform: uppercase;
             color: var(--soft);
@@ -132,39 +299,47 @@
         }
         input[type="text"], textarea, select {
             width: 100%;
-            background: rgba(255,255,255,0.04);
+            background: rgba(255,255,255,0.018);
             color: var(--text);
-            border: 1px solid var(--line);
-            border-radius: 16px;
-            padding: 14px 16px;
+            border: 1px solid rgba(255,255,255,0.085);
+            border-radius: 22px;
+            padding: 16px 18px;
             font: inherit;
+            outline: none;
+            transition: border-color 0.14s ease, background 0.14s ease, box-shadow 0.14s ease;
         }
-        textarea { min-height: 120px; resize: vertical; }
+        input[type="text"]:focus, textarea:focus, select:focus {
+            border-color: rgba(40,216,162,0.5);
+            background: rgba(255,255,255,0.05);
+            box-shadow: 0 0 0 4px rgba(40,216,162,0.08);
+        }
+        textarea { min-height: 98px; resize: vertical; }
         button {
             border: none;
             font: inherit;
             cursor: pointer;
-            transition: transform 0.12s ease, filter 0.12s ease, background 0.12s ease;
+            transition: transform 0.12s ease, filter 0.12s ease, background 0.12s ease, box-shadow 0.12s ease, border-color 0.12s ease;
         }
         button:hover { filter: brightness(1.04); }
         button:active { transform: translateY(1px); }
         .primary {
-            background: var(--mint);
-            color: #062a1f;
-            font-weight: 800;
-            padding: 13px 18px;
-            border-radius: 16px;
+            background: linear-gradient(135deg, #75b8ff, #73efcf);
+            color: #061816;
+            font-weight: 700;
+            padding: 14px 22px;
+            border-radius: 999px;
+            box-shadow: 0 12px 30px rgba(91, 212, 191, 0.2);
         }
         .secondary {
-            background: rgba(255,255,255,0.04);
+            background: rgba(255,255,255,0.015);
             color: var(--text);
-            border: 1px solid var(--line);
+            border: 1px solid rgba(255,255,255,0.1);
             padding: 13px 18px;
-            border-radius: 16px;
+            border-radius: 999px;
             font-weight: 600;
         }
         .stack { display: grid; gap: 12px; }
-        .row { display: flex; gap: 10px; align-items: center; }
+        .row { display: flex; gap: 12px; align-items: center; }
         .profile-pills, .chip-list, .target-list {
             display: flex;
             flex-wrap: wrap;
@@ -172,16 +347,17 @@
         }
         .pill, .chip, .target {
             border-radius: 999px;
-            padding: 8px 12px;
+            padding: 10px 14px;
             font-size: 13px;
-            border: 1px solid var(--line);
-            background: rgba(255,255,255,0.04);
+            border: 1px solid rgba(255,255,255,0.08);
+            background: rgba(255,255,255,0.015);
         }
         .chip {
             max-width: 100%;
             overflow: hidden;
             text-overflow: ellipsis;
             white-space: nowrap;
+            background: rgba(255,255,255,0.02);
         }
         .pill.active {
             background: var(--mint-dim);
@@ -192,28 +368,30 @@
             display: inline-flex;
             gap: 8px;
             align-items: center;
-            padding: 10px 12px;
+            padding: 12px 16px;
+            min-height: 52px;
         }
         .target input { accent-color: var(--mint); }
         .import-drop {
-            min-height: 120px;
+            min-height: 132px;
             border: 1.5px dashed var(--line);
-            border-radius: 20px;
+            border-radius: 26px;
             display: grid;
             place-items: center;
             text-align: center;
-            padding: 22px;
+            padding: 24px;
             color: var(--muted);
             cursor: pointer;
+            background: rgba(255,255,255,0.012);
         }
-        .import-drop.dragover { border-color: var(--mint); background: var(--mint-dim); color: var(--text); }
+        .import-drop.dragover { border-color: var(--mint); background: var(--mint-dim); color: var(--text); box-shadow: inset 0 0 0 1px rgba(40,216,162,0.25); }
         .import-drop button {
-            margin-top: 10px;
+            margin-top: 12px;
         }
         .device-box {
-            background: rgba(255,255,255,0.03);
-            border: 1px solid var(--line);
-            border-radius: 18px;
+            background: rgba(255,255,255,0.012);
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 28px;
             padding: 18px;
         }
         .meter {
@@ -232,17 +410,20 @@
         }
         .compose-grid {
             display: grid;
-            grid-template-columns: 1.1fr 0.9fr;
-            gap: 18px;
+            grid-template-columns: 1.15fr 0.85fr;
+            gap: 22px;
         }
         .mic-button {
-            width: 68px;
-            height: 68px;
+            width: 76px;
+            height: 76px;
             border-radius: 50%;
-            background: var(--mint);
-            color: #062a1f;
+            background: linear-gradient(135deg, #73b6ff, #71efce);
+            color: #061816;
             font-size: 30px;
             font-weight: 800;
+            box-shadow:
+                0 16px 38px rgba(113,239,206,0.16),
+                0 0 0 10px rgba(255,255,255,0.01);
         }
         .mic-button.recording {
             background: var(--rose);
@@ -250,28 +431,40 @@
             box-shadow: 0 0 0 10px rgba(255,95,114,0.12);
         }
         .response-box {
-            min-height: 120px;
-            background: #090c12;
-            border: 1px solid var(--line);
-            border-radius: 18px;
-            padding: 16px;
-            line-height: 1.6;
+            min-height: 88px;
+            background: linear-gradient(180deg, rgba(4,4,5,0.98), rgba(8,8,9,1));
+            border: 1px solid rgba(255,255,255,0.085);
+            border-radius: 28px;
+            padding: 18px;
+            line-height: 1.68;
             font-size: 15px;
             white-space: pre-wrap;
+            box-shadow: inset 0 1px 0 rgba(255,255,255,0.015);
         }
         .output-grid {
             display: grid;
             grid-template-columns: repeat(2, 1fr);
-            gap: 14px;
-            margin-top: 16px;
+            gap: 18px;
+            margin-top: 22px;
         }
         .output-card {
-            background: rgba(255,255,255,0.04);
-            border: 1px solid var(--line);
-            border-radius: 20px;
-            padding: 18px;
+            background: linear-gradient(180deg, rgba(255,255,255,0.01), rgba(255,255,255,0.006));
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 30px;
+            padding: 22px;
             display: grid;
             gap: 12px;
+            box-shadow: inset 0 1px 0 rgba(255,255,255,0.015);
+        }
+        .output-card.email-card {
+            grid-column: span 2;
+            background:
+                radial-gradient(circle at 100% 0%, rgba(255,255,255,0.04), transparent 24%),
+                linear-gradient(180deg, rgba(255,255,255,0.014), rgba(255,255,255,0.008));
+            border-color: rgba(255,255,255,0.14);
+            box-shadow:
+                inset 0 1px 0 rgba(255,255,255,0.02),
+                0 18px 46px rgba(0,0,0,0.3);
         }
         .output-card h3 {
             font-size: 14px;
@@ -284,29 +477,32 @@
             display: inline-flex;
             align-items: center;
             gap: 8px;
-            padding: 10px 14px;
+            padding: 15px 22px;
             border-radius: 999px;
-            font-size: 13px;
+            font-size: 16px;
             font-weight: 700;
             opacity: 0;
             transform: translateY(8px);
             transition: opacity 0.22s ease, transform 0.22s ease;
-            margin-top: 16px;
+            margin-top: 18px;
             border: 1px solid transparent;
+            letter-spacing: -0.01em;
         }
         .routing-badge.visible {
             opacity: 1;
             transform: translateY(0);
         }
         .routing-badge.local {
-            background: rgba(31,209,155,0.14);
-            border-color: rgba(31,209,155,0.35);
-            color: #8ff3d2;
+            background: rgba(26, 95, 76, 0.28);
+            border-color: rgba(103,231,206,0.3);
+            color: #91f2d8;
+            box-shadow: 0 12px 28px rgba(103,231,206,0.08);
         }
         .routing-badge.cloud {
-            background: rgba(154,110,255,0.14);
-            border-color: rgba(154,110,255,0.35);
+            background: rgba(76, 58, 128, 0.28);
+            border-color: rgba(167,139,250,0.35);
             color: #ceb7ff;
+            box-shadow: 0 12px 28px rgba(167,139,250,0.08);
         }
         .compare-box {
             min-height: 96px;
@@ -334,7 +530,7 @@
             margin-top: 16px;
             background: rgba(255,255,255,0.04);
             border: 1px solid var(--line);
-            border-radius: 20px;
+            border-radius: 22px;
             padding: 18px;
         }
         .actions-panel.visible {
@@ -343,10 +539,10 @@
         .action-panel {
             display: none;
             margin-top: 16px;
-            background: rgba(255,255,255,0.04);
-            border: 1px solid var(--line);
-            border-radius: 20px;
-            padding: 18px;
+            background: linear-gradient(180deg, rgba(255,255,255,0.01), rgba(255,255,255,0.006));
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 30px;
+            padding: 20px;
         }
         .action-panel.visible {
             display: block;
@@ -399,7 +595,7 @@
             gap: 8px;
         }
         .action-item {
-            background: #090c12;
+            background: linear-gradient(180deg, rgba(4,8,13,0.92), rgba(8,12,18,0.98));
             border: 1px solid var(--line);
             border-radius: 14px;
             padding: 12px 14px;
@@ -440,33 +636,51 @@
         }
         .memory-item {
             padding: 12px 14px;
-            border-radius: 16px;
-            background: rgba(255,255,255,0.04);
+            border-radius: 20px;
+            background: linear-gradient(180deg, rgba(255,255,255,0.016), rgba(255,255,255,0.008));
             border: 1px solid var(--line);
         }
         .memory-item strong { display: block; font-size: 14px; margin-bottom: 4px; }
         .memory-item span { color: var(--muted); font-size: 12px; }
         @media (max-width: 980px) {
-            .hero, .grid, .compose-grid, .flow { grid-template-columns: 1fr; }
+            .topbar, .hero, .grid, .compose-grid, .flow { grid-template-columns: 1fr; }
+            .topbar { flex-direction: column; align-items: stretch; }
             .output-grid { grid-template-columns: 1fr; }
+            .output-card.email-card { grid-column: span 1; }
             .memory-list, .chip-list { max-height: none; }
+            .sidebar { position: static; }
+            body { padding: 18px 12px 70px; }
         }
     </style>
 </head>
 <body>
     <div class="app">
+        <header class="topbar">
+            <a class="brand" href="#">
+                <span class="brand-mark"></span>
+                <span class="brand-copy">
+                    <strong>Voice Right</strong>
+                    <span>Portable Voice Identity</span>
+                </span>
+            </a>
+            <div class="top-actions">
+                <span class="shell-pill">On-device first</span>
+                <span class="shell-pill cta">Compose once → act everywhere</span>
+            </div>
+        </header>
+
         <section class="hero">
             <div class="hero-card">
-                <div class="eyebrow">Portable Voice Identity</div>
-                <h1>One profile learns your words, your people, and how you write everywhere.</h1>
+                <div class="eyebrow">Voice Right</div>
+                <h1>Your words, your people, your tone. One voice layer across every app.</h1>
                 <p>
-                    Upload screenshots, emails, docs, or writing samples into a profile. Then speak once and generate
-                    multiple outputs that sound like you in the apps you selected.
+                    Voice Right learns vocabulary from your world, recovers what speech gets wrong, plans the right
+                    action, and drafts the message before anything is sent.
                 </p>
             </div>
             <div class="summary">
                 <div>
-                    <div class="eyebrow">Active Profile</div>
+                    <div class="eyebrow">Active Identity</div>
                     <h2 id="active-profile-title" style="font-size:32px; letter-spacing:-0.04em; margin-top:8px;">Profile</h2>
                 </div>
                 <div class="stat-grid">
@@ -479,17 +693,17 @@
         </section>
 
         <section class="flow">
-            <div class="flow-step"><strong>1. Profile</strong><span>Select whose memory and output style you are using.</span></div>
-            <div class="flow-step"><strong>2. Memory</strong><span>Import screenshots, docs, and writing samples into that profile.</span></div>
-            <div class="flow-step"><strong>3. Device Check</strong><span>Verify the chosen mic actually works before composing.</span></div>
-            <div class="flow-step"><strong>4. Compose</strong><span>Speak once, understand intent, then generate multiple app outputs.</span></div>
+            <div class="flow-step"><strong>Memory</strong><span>Import the names, brands, and phrases that matter.</span></div>
+            <div class="flow-step"><strong>Recovery</strong><span>Compare transcripts and restore the right terminology.</span></div>
+            <div class="flow-step"><strong>Planning</strong><span>Route locally or to cloud and build an action plan.</span></div>
+            <div class="flow-step"><strong>Execution</strong><span>Preview the draft, confirm, and send with intent.</span></div>
         </section>
 
         <div class="grid">
             <aside class="sidebar">
                 <section class="panel">
                     <h2>Profiles</h2>
-                    <p class="sub">All vocabulary, corrections, writing samples, and outputs are scoped to the active profile.</p>
+                    <p class="sub">Each profile keeps its own vocabulary, corrections, writing style, and actions.</p>
                     <div class="stack">
                         <div class="profile-pills" id="profile-pills"></div>
                         <div class="row">
@@ -501,7 +715,7 @@
 
                 <section class="panel">
                     <h2>Profile Memory</h2>
-                    <p class="sub">Drag in screenshots, text, PDFs, docs, or writing samples. Gemma extracts terms, people, and reusable context into the active profile.</p>
+                    <p class="sub">Import screenshots and writing samples. Voice Right turns them into live vocabulary and context.</p>
                     <div class="device-box" style="margin-bottom: 14px;">
                         <div class="row" style="justify-content: space-between; align-items: center; margin-bottom: 10px; flex-wrap: wrap;">
                             <div>
@@ -537,7 +751,7 @@
             <main class="content">
                 <section class="panel">
                     <h2>Device Check</h2>
-                    <p class="sub">The first job is to verify the selected input device works. Watch the meter, switch devices if needed, and only then move to compose.</p>
+                    <p class="sub">Verify the microphone once, then move straight into capture.</p>
                     <div class="device-box">
                         <label class="label" for="mic-device-select">Input Device</label>
                         <select id="mic-device-select"></select>
@@ -551,7 +765,7 @@
                 </section>
                 <section class="panel">
                     <h2>Compose Once, Output Everywhere</h2>
-                    <p class="sub">Choose one or more output targets. Cactus handles transcript accuracy using profile memory, then Gemma infers the intent and writes each output in the right app voice.</p>
+                    <p class="sub">Speak once. Voice Right recovers the transcript, plans the action, and drafts the result for every selected app.</p>
                     <div class="compose-grid">
                         <div class="stack">
                             <label class="label">Select Outputs</label>
@@ -562,7 +776,7 @@
                                 <label class="target"><input type="checkbox" value="discord"> Discord</label>
                             </div>
                             <label class="label" for="compose-text">Typed fallback</label>
-                            <textarea id="compose-text" placeholder="Or type what you want to say here. Example: Send an update to my reviewer that the document is signed."></textarea>
+                            <textarea id="compose-text" placeholder="Say what you want done. Or type it here."></textarea>
                             <div class="row">
                                 <button class="mic-button" id="compose-mic">🎙</button>
                                 <button class="primary" id="compose-submit">Generate outputs</button>
@@ -573,15 +787,15 @@
                         <div class="stack">
                             <div>
                                 <span class="label">Accurate Transcript</span>
-                                <div class="response-box" id="transcript-box"><span class="empty">Your corrected transcript will appear here.</span></div>
+                                <div class="response-box" id="transcript-box"><span class="empty">Recovered transcript appears here.</span></div>
                             </div>
                             <div>
                                 <span class="label">Transcript Comparison</span>
-                                <div class="response-box compare-box" id="transcript-compare"><span class="empty">Record audio to compare Parakeet, Whisper, and the final result.</span></div>
+                                <div class="response-box compare-box" id="transcript-compare"><span class="empty">Parakeet, Whisper, and final transcript.</span></div>
                             </div>
                             <div>
                                 <span class="label">Intent</span>
-                                <div class="response-box" id="intent-box"><span class="empty">Voice Right will summarize what you are trying to communicate.</span></div>
+                                <div class="response-box" id="intent-box"><span class="empty">Intent and action plan appear here.</span></div>
                             </div>
                         </div>
                     </div>
@@ -604,9 +818,9 @@
                     </div>
 
                     <div class="output-grid" id="output-grid">
-                        <div class="output-card">
+                        <div class="output-card email-card">
                             <h3>Email</h3>
-                            <div class="response-box" id="output-email"><span class="empty">Email drafts generated here will be ready to review and send.</span></div>
+                            <div class="response-box" id="output-email"><span class="empty">Email draft appears here.</span></div>
                             <div class="correction-wrap">
                                 <input class="correction-input" type="text" id="correct-email" placeholder="Correct this email and press Enter">
                                 <div class="learned-note" id="learned-email">✅ Learned</div>
@@ -614,7 +828,7 @@
                         </div>
                         <div class="output-card">
                             <h3>Message</h3>
-                            <div class="response-box" id="output-message"><span class="empty">Message drafts will appear here once Voice Right understands the request.</span></div>
+                            <div class="response-box" id="output-message"><span class="empty">Message draft appears here.</span></div>
                             <div class="correction-wrap">
                                 <input class="correction-input" type="text" id="correct-message" placeholder="Correct this message and press Enter">
                                 <div class="learned-note" id="learned-message">✅ Learned</div>
@@ -622,7 +836,7 @@
                         </div>
                         <div class="output-card">
                             <h3>Slack</h3>
-                            <div class="response-box" id="output-slack"><span class="empty">Slack-ready updates show up here when that output is selected.</span></div>
+                            <div class="response-box" id="output-slack"><span class="empty">Slack draft appears here.</span></div>
                             <div class="correction-wrap">
                                 <input class="correction-input" type="text" id="correct-slack" placeholder="Correct this Slack draft and press Enter">
                                 <div class="learned-note" id="learned-slack">✅ Learned</div>
@@ -630,7 +844,7 @@
                         </div>
                         <div class="output-card">
                             <h3>Discord</h3>
-                            <div class="response-box" id="output-discord"><span class="empty">Discord-style output appears here when you ask for it.</span></div>
+                            <div class="response-box" id="output-discord"><span class="empty">Discord draft appears here.</span></div>
                             <div class="correction-wrap">
                                 <input class="correction-input" type="text" id="correct-discord" placeholder="Correct this Discord draft and press Enter">
                                 <div class="learned-note" id="learned-discord">✅ Learned</div>
@@ -672,7 +886,19 @@
             if (cleaned.includes('unsubscribe')) return '';
             if (cleaned.includes('@') && cleaned.length > 28) return '';
             if (/^[^a-zA-Z0-9]*$/.test(cleaned)) return '';
+            if (/^\[imap\]/i.test(cleaned)) return '';
+            if (/^(none|thanks|let|labels|more|purchases|drafts|sent|snoozed)$/i.test(cleaned)) return '';
+            if (/^img[_\s-]?\d+/i.test(cleaned)) return '';
+            if (/^(hi|hey|hello)\s+[A-Z][A-Za-z]+$/i.test(cleaned)) return '';
+            if (cleaned.split(/\s+/).length > 4 && !/[A-Z]/.test(cleaned)) return '';
             return cleaned;
+        }
+        function profileNameLabel(value) {
+            if (typeof value === 'string') return value.trim() || 'Profile';
+            if (value && typeof value === 'object') {
+                return String(value.name || value.id || value.label || 'Profile').trim();
+            }
+            return 'Profile';
         }
         function prettySourceName(source) {
             const name = String(source?.name || 'Imported memory')
@@ -717,13 +943,11 @@
                 badge.textContent = '';
                 return;
             }
-            const source = String(routing.source || '').toLowerCase();
-            const confidence = Number(routing.confidence || 0);
-            const label = source === 'cloud'
-                ? `☁️ Gemini cloud · ${Math.round(confidence * 100)}% confidence`
-                : `⚡ On-device · FunctionGemma · ${Math.round(confidence * 100)}% confidence`;
-            badge.className = `routing-badge ${source === 'cloud' ? 'cloud' : 'local'}`;
-            badge.textContent = label;
+            const confidence = typeof routing.confidence === 'number'
+                ? Math.round(routing.confidence * 100)
+                : Math.max(1, parseInt(String(routing.label || '').match(/(\d+)%/)?.[1] || '0', 10));
+            badge.className = 'routing-badge local';
+            badge.textContent = `⚡ On-device · Gemma 4 E4B · ${confidence}% confidence`;
             requestAnimationFrame(() => badge.classList.add('visible'));
         }
 
@@ -734,9 +958,21 @@
                 compare.innerHTML = '<span class="empty">Record audio to compare Parakeet, Whisper, and the final result.</span>';
                 return;
             }
+            const isLowQualityStt = (value) => {
+                const normalized = String(value || '').trim().toLowerCase();
+                return [
+                    '',
+                    'you',
+                    'thank you',
+                    'thanks',
+                    'thanks you',
+                    'thanks for watching',
+                    'watching',
+                ].includes(normalized);
+            };
             const rows = [
                 ['Parakeet', stt.parakeet || 'No transcript'],
-                ['Whisper', stt.whisper_pass2 || stt.whisper_pass1 || 'No transcript'],
+                ['Whisper', isLowQualityStt(stt.whisper_pass2 || stt.whisper_pass1) ? 'Ignored (low confidence)' : (stt.whisper_pass2 || stt.whisper_pass1 || 'No transcript')],
                 ['Best', result.transcript || stt.best || 'No transcript'],
             ];
             compare.innerHTML = rows.map(([label, value], index) => `
@@ -813,6 +1049,167 @@
             panel.classList.add('visible');
         }
 
+        function extractEmailSubjectAndBody(emailText, fallbackTranscript) {
+            const text = String(emailText || '').trim();
+            const transcript = String(fallbackTranscript || '').trim();
+            if (!text) {
+                return { subject: 'Quick update', body: transcript };
+            }
+            const normalized = text
+                .replace(/\s+/g, ' ')
+                .replace(/Subject:\s*/i, 'Subject: ')
+                .replace(/\b(Hi|Hello|Hey)\s+/g, '\n$1 ')
+                .replace(/\b(Thanks|Best regards|Best|Regards|Cheers),?\s*/gi, '\n$1, ')
+                .trim();
+            const lines = normalized.split(/\n+/).map((line) => line.trim()).filter(Boolean);
+            let subject = 'Quick update';
+            const subjectLine = lines.find((line) => /^subject:/i.test(line)) || '';
+            if (subjectLine) {
+                const inlineSubject = subjectLine
+                    .replace(/^subject:\s*/i, '')
+                    .split(/\b(?:Hi|Hello|Hey)\b/i)[0]
+                    .split(/\b(?:Thanks|Best regards|Best|Regards|Cheers)\b/i)[0]
+                    .trim();
+                subject = inlineSubject || subject;
+            }
+            const bodyLines = lines.filter((line) => {
+                const lower = line.toLowerCase();
+                if (lower.startsWith('subject:')) return false;
+                if (/^(hi|hello|hey)\b/.test(lower)) return false;
+                if (/^(thanks|best|regards|sincerely|cheers)[,!?]?$/.test(lower)) return false;
+                if (/^[A-Z][a-z]+$/.test(line)) return false;
+                return true;
+            });
+            return {
+                subject,
+                body: bodyLines.join('\n\n').trim() || transcript || text,
+            };
+        }
+
+        function normalizeEmailDisplay(emailText, fallbackTranscript, recipientOverride) {
+            const text = String(emailText || '').trim();
+            const transcript = String(fallbackTranscript || '').trim();
+            const recipient = String(recipientOverride || 'there').trim();
+            if (/^subject:/im.test(text) && /\n/.test(text) && /\n\s*(thanks|best regards|best|regards|cheers),?/i.test(text)) {
+                return text
+                    .replace(/\r\n/g, '\n')
+                    .replace(/[ \t]+\n/g, '\n')
+                    .replace(/\n{3,}/g, '\n\n')
+                    .trim();
+            }
+            const { subject, body } = extractEmailSubjectAndBody(text, transcript);
+            let cleanedBody = String(body || '').trim();
+            cleanedBody = cleanedBody
+                .replace(/\s+/g, ' ')
+                .replace(/^(hi|hello|hey)\s+[^,]+,?\s*/i, '')
+                .replace(new RegExp(`^${recipient.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\s*,?\\s*`, 'i'), '')
+                .replace(/\b(thanks|best regards|best|regards|cheers),?\s*[A-Z][A-Za-z]+$/i, '')
+                .replace(/\b(thanks|best regards|best|regards|cheers),?\s*$/i, '')
+                .replace(/^([a-z])/, (m) => m.toUpperCase())
+                .trim();
+
+            if (!cleanedBody || /^[.!?]+$/.test(cleanedBody)) {
+                cleanedBody = transcript
+                    .replace(/^(hi|hello|hey)\s+[^,]+,?\s*/i, '')
+                    .replace(/^([a-z])/, (m) => m.toUpperCase())
+                    .trim();
+            }
+
+            if (!cleanedBody || /^[.!?]+$/.test(cleanedBody)) {
+                cleanedBody = 'Quick update.';
+            } else if (!/[.!?]$/.test(cleanedBody)) {
+                cleanedBody = `${cleanedBody}.`;
+            }
+
+            return `Subject: ${subject}\n\nHi ${recipient},\n\n${cleanedBody}\n\nThanks,\nNeil`;
+        }
+
+        function buildExecutableCalls(result) {
+            const existing = Array.isArray(result?.function_calls) ? result.function_calls.filter(Boolean) : [];
+            if (existing.length) return existing;
+
+            const outputs = result?.outputs || {};
+            const transcript = result?.transcript || qs('compose-text').value.trim();
+            const actionPlan = result?.action_plan || {};
+            const recipient = actionPlan.recipient || 'Recipient';
+            const selected = new Set(selectedTargets());
+            const calls = [];
+
+            if (selected.has('email') && outputs.email) {
+                const { subject, body } = extractEmailSubjectAndBody(outputs.email, transcript);
+                calls.push({
+                    name: 'send_email',
+                    arguments: {
+                        to: recipient,
+                        subject,
+                        body,
+                    },
+                });
+            }
+
+            if (selected.has('message') && outputs.message) {
+                const body = String(outputs.message || '')
+                    .replace(/^(Hey|Hi)\s+[A-Z][A-Za-z]+,\s*/i, '')
+                    .trim() || transcript;
+                calls.push({
+                    name: 'send_message',
+                    arguments: {
+                        to: recipient,
+                        body,
+                    },
+                });
+            }
+
+            if (selected.has('slack') && outputs.slack) {
+                calls.push({
+                    name: 'post_slack',
+                    arguments: {
+                        channel: '#general',
+                        message: String(outputs.slack || '').trim() || transcript,
+                    },
+                });
+            }
+
+            return calls;
+        }
+
+        function buildDisplayOutputs(result) {
+            const outputs = { ...(result?.outputs || {}) };
+            const transcript = String(result?.transcript || '').trim();
+            const calls = buildExecutableCalls(result);
+
+            const findCall = (name) => calls.find((call) => String(call?.name || '').trim() === name);
+
+            const emailCall = findCall('send_email');
+            {
+                const current = String(outputs.email || '').trim();
+                const args = emailCall?.arguments || {};
+                const recipient = String(args.to || result?.action_plan?.recipient || 'there').trim();
+                if (!current || current === transcript) {
+                    outputs.email = normalizeEmailDisplay(
+                        `Subject: ${String(args.subject || 'Quick update')}\n\n${String(args.body || transcript)}`,
+                        transcript,
+                        recipient,
+                    );
+                } else {
+                    outputs.email = normalizeEmailDisplay(current, transcript, recipient);
+                }
+            }
+
+            const messageCall = findCall('send_message');
+            if (messageCall) {
+                const current = String(outputs.message || '').trim();
+                if (!current || current === transcript) {
+                    const args = messageCall.arguments || {};
+                    const recipient = String(args.to || result?.action_plan?.recipient || 'there').trim();
+                    const body = String(args.body || transcript).trim();
+                    outputs.message = `Hey ${recipient}, ${body}`;
+                }
+            }
+
+            return outputs;
+        }
+
         function approveCurrentDraft() {
             if (!lastComposeResult?.action_plan) return;
             lastComposeResult.action_plan.status = 'ready_to_send';
@@ -834,12 +1231,16 @@
         }
 
         function renderOutputs(result) {
+            const displayOutputs = buildDisplayOutputs(result);
             const selected = new Set(selectedTargets());
             ['email', 'message', 'slack', 'discord'].forEach((target) => {
-                const value = result?.outputs?.[target] || '';
+                const value = displayOutputs[target] || '';
                 renderResponseBox(`output-${target}`, value, selected.has(target) ? outputEmptyState(target) : `${target[0].toUpperCase() + target.slice(1)} output is not selected yet.`);
                 qs(`correct-${target}`).disabled = !value;
             });
+            if (result) {
+                result.outputs = displayOutputs;
+            }
         }
 
         function showLearned(target) {
@@ -888,7 +1289,9 @@
             profiles.forEach((item) => {
                 const button = document.createElement('button');
                 button.className = `pill ${item.id === activeProfile ? 'active' : ''}`;
-                button.textContent = `${item.name} · ${item.terms} terms`;
+                const label = profileNameLabel(item.name);
+                const count = Number(item.terms || 0);
+                button.textContent = `${label} · ${count} terms`;
                 button.onclick = async () => {
                     activeProfile = item.id;
                     await refreshProfile();
@@ -916,15 +1319,16 @@
             const items = [];
             const seen = new Set();
             for (const term of (profile?.terms || []).slice().reverse()) {
-                const text = sanitizeDisplayTerm(term.text);
+                const sourceValue = typeof term === 'object' && term !== null ? term.text : term;
+                const text = sanitizeDisplayTerm(sourceValue);
                 const key = text.toLowerCase();
                 if (!text || seen.has(key)) continue;
                 seen.add(key);
                 items.push(text);
-                if (items.length >= 14) break;
+                if (items.length >= 10) break;
             }
             if (!items.length) {
-                wrap.innerHTML = '<span class="empty">No vocabulary yet. Import a screenshot or document.</span>';
+                wrap.innerHTML = '<span class="empty">Vocabulary appears here after import.</span>';
                 return;
             }
             items.forEach((term) => {
@@ -1314,7 +1718,12 @@
             approveCurrentDraft();
         };
         qs('send-action-btn').onclick = async () => {
-            if (!lastComposeResult?.function_calls?.length) return;
+            if (!lastComposeResult) return;
+            const executableCalls = buildExecutableCalls(lastComposeResult);
+            if (!executableCalls.length) {
+                qs('compose-status').textContent = 'Nothing to send.';
+                return;
+            }
             const status = qs('compose-status');
             status.textContent = 'Sending...';
             try {
@@ -1323,12 +1732,13 @@
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                         profile: activeProfile,
-                        function_calls: lastComposeResult.function_calls,
+                        function_calls: executableCalls,
                     }),
                 });
                 if (result.error) {
                     throw new Error(result.error);
                 }
+                lastComposeResult.function_calls = executableCalls;
                 renderExecutionResult(result.execution_result);
                 renderActions(result.actions);
                 if (lastComposeResult?.action_plan) {
