@@ -157,6 +157,15 @@
             font-weight: 700;
             box-shadow: 0 12px 34px rgba(111,241,205,0.18);
         }
+        .shell-pill.mode {
+            cursor: pointer;
+            background: rgba(255,255,255,0.02);
+        }
+        .shell-pill.mode.active {
+            border-color: rgba(103,231,206,0.5);
+            background: rgba(103,231,206,0.12);
+            color: #a7f7e8;
+        }
         .hero {
             display: grid;
             grid-template-columns: 1.5fr 0.9fr;
@@ -248,6 +257,26 @@
             gap: 12px;
             margin-bottom: 18px;
         }
+        .flow-nav {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 18px;
+            flex-wrap: wrap;
+        }
+        .flow-tab {
+            border-radius: 999px;
+            border: 1px solid rgba(255,255,255,0.12);
+            background: rgba(255,255,255,0.02);
+            color: var(--muted);
+            padding: 10px 16px;
+            font-size: 13px;
+            font-weight: 600;
+        }
+        .flow-tab.active {
+            color: #05201a;
+            background: linear-gradient(135deg, #72b8ff, #6ff1cd);
+            border-color: rgba(255,255,255,0.22);
+        }
         .flow-step {
             padding: 16px 20px 15px;
             border-radius: 999px;
@@ -261,6 +290,20 @@
             grid-template-columns: minmax(330px, 380px) minmax(0, 1fr);
             gap: 22px;
             align-items: start;
+            justify-content: center;
+        }
+        .grid.focus-main {
+            grid-template-columns: 1fr;
+        }
+        .grid.stage-setup {
+            grid-template-columns: minmax(320px, 420px) minmax(420px, 760px);
+            max-width: 1220px;
+            margin: 0 auto;
+        }
+        .grid.stage-compose,
+        .grid.stage-review {
+            max-width: 1180px;
+            margin: 0 auto;
         }
         .sidebar, .content {
             display: grid;
@@ -441,6 +484,61 @@
             white-space: pre-wrap;
             box-shadow: inset 0 1px 0 rgba(255,255,255,0.015);
         }
+        .flow-shell {
+            margin-bottom: 16px;
+            border: 1px solid rgba(255,255,255,0.12);
+            border-radius: 24px;
+            padding: 16px;
+            background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.008));
+            display: grid;
+            gap: 12px;
+        }
+        .flow-line {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+        .flow-chip {
+            border-radius: 999px;
+            border: 1px solid var(--line);
+            background: rgba(255,255,255,0.02);
+            color: var(--muted);
+            padding: 8px 12px;
+            font-size: 12px;
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+        }
+        .flow-chip.active {
+            border-color: rgba(103,231,206,0.45);
+            color: #b6f8eb;
+            background: rgba(103,231,206,0.1);
+        }
+        .flow-tabs {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+        .flow-tab {
+            border-radius: 12px;
+            border: 1px solid var(--line);
+            background: rgba(255,255,255,0.02);
+            color: var(--text);
+            padding: 10px 12px;
+            font-weight: 600;
+        }
+        .flow-tab.active {
+            border-color: rgba(103,231,206,0.45);
+            background: rgba(103,231,206,0.12);
+            color: #b6f8eb;
+        }
+        .flow-draft {
+            min-height: 130px;
+        }
+        .flow-proof {
+            font-size: 12px;
+            color: var(--muted);
+        }
         .output-grid {
             display: grid;
             grid-template-columns: repeat(2, 1fr);
@@ -600,6 +698,83 @@
             grid-template-columns: repeat(2, 1fr);
             gap: 10px;
         }
+        .demo-steps {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 8px;
+            margin-top: 12px;
+        }
+        .demo-step {
+            border: 1px solid var(--line);
+            border-radius: 12px;
+            padding: 10px 10px 8px;
+            background: rgba(255,255,255,0.012);
+            color: var(--soft);
+            font-size: 12px;
+            line-height: 1.35;
+        }
+        .demo-step strong {
+            display: block;
+            color: var(--muted);
+            margin-bottom: 4px;
+            font-size: 11px;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+        }
+        .demo-step.active {
+            border-color: rgba(103,231,206,0.45);
+            background: rgba(103,231,206,0.11);
+            color: #b6f8eb;
+        }
+        .demo-step.active strong {
+            color: #b6f8eb;
+        }
+        .demo-step.done {
+            border-color: rgba(118,185,255,0.4);
+            background: rgba(118,185,255,0.1);
+            color: #cfe6ff;
+        }
+        .demo-step.done strong {
+            color: #cfe6ff;
+        }
+        .agent-trace {
+            margin-top: 12px;
+            border: 1px solid var(--line);
+            border-radius: 16px;
+            padding: 12px;
+            background: rgba(255,255,255,0.015);
+            display: grid;
+            gap: 8px;
+        }
+        .trace-row {
+            display: grid;
+            grid-template-columns: 130px 1fr;
+            gap: 10px;
+            align-items: center;
+            font-size: 12px;
+        }
+        .trace-chip {
+            border: 1px solid var(--line);
+            border-radius: 999px;
+            padding: 6px 10px;
+            width: fit-content;
+            color: var(--muted);
+            background: rgba(255,255,255,0.015);
+        }
+        .trace-chip.active {
+            color: #a7f7e8;
+            border-color: rgba(103,231,206,0.45);
+            background: rgba(103,231,206,0.12);
+        }
+        .trace-chip.done {
+            color: #8ff3d2;
+            border-color: rgba(143,243,210,0.45);
+            background: rgba(143,243,210,0.1);
+        }
+        .trace-detail {
+            color: var(--muted);
+            line-height: 1.4;
+        }
         .mini-kpi {
             border: 1px solid var(--line);
             border-radius: 16px;
@@ -639,6 +814,27 @@
         .actions-list {
             display: grid;
             gap: 8px;
+        }
+        .why-panel {
+            margin-top: 16px;
+            border: 1px solid var(--line);
+            border-radius: 22px;
+            padding: 16px 18px;
+            background: rgba(255,255,255,0.02);
+        }
+        .why-panel h3 {
+            font-size: 14px;
+            text-transform: uppercase;
+            letter-spacing: 0.12em;
+            color: var(--soft);
+            margin-bottom: 10px;
+        }
+        .why-list {
+            display: grid;
+            gap: 8px;
+            color: var(--muted);
+            font-size: 13px;
+            line-height: 1.5;
         }
         .action-item {
             background: linear-gradient(180deg, rgba(4,8,13,0.92), rgba(8,12,18,0.98));
@@ -712,16 +908,18 @@
             <div class="top-actions">
                 <span class="shell-pill">On-device first</span>
                 <span class="shell-pill cta">Compose once → act everywhere</span>
+                <button class="shell-pill mode" id="hackathon-mode-btn" type="button">Hackathon mode: off</button>
+                <button class="shell-pill mode" id="run-guided-demo-btn" type="button">Run guided demo</button>
             </div>
         </header>
 
         <section class="hero">
             <div class="hero-card">
                 <div class="eyebrow">Voice Right</div>
-                <h1>Your words, your people, your tone. One voice layer across every app.</h1>
+                <h1>High-stakes voice to polished message, in your tone, with local-first speed and privacy.</h1>
                 <p>
-                    Voice Right learns vocabulary from your world, recovers what speech gets wrong, plans the right
-                    action, and drafts the message before anything is sent.
+                    Capture once, reconcile STT, route with confidence, generate drafts, and execute with approval.
+                    Every correction is learned into your profile so the next send is better.
                 </p>
             </div>
             <div class="summary">
@@ -745,9 +943,15 @@
             <div class="flow-step"><strong>Execution</strong><span>Preview the draft, confirm, and send with intent.</span></div>
         </section>
 
-        <div class="grid">
-            <aside class="sidebar">
-                <section class="panel">
+        <section class="flow-nav">
+            <button class="flow-tab active" id="flow-tab-setup" type="button">1. Setup</button>
+            <button class="flow-tab" id="flow-tab-compose" type="button">2. Compose</button>
+            <button class="flow-tab" id="flow-tab-review" type="button">3. Review + Send</button>
+        </section>
+
+        <div class="grid" id="app-grid">
+            <aside class="sidebar" id="setup-sidebar" data-flow-section="setup">
+                <section class="panel" data-flow-section="setup">
                     <h2>Profiles</h2>
                     <p class="sub">Each profile keeps its own vocabulary, corrections, writing style, and actions.</p>
                     <div class="stack">
@@ -755,11 +959,29 @@
                         <div class="row">
                             <input type="text" id="new-profile-name" placeholder="Create a profile">
                             <button class="primary" id="create-profile-btn">Create</button>
+                            <button class="secondary" id="seed-demo-btn">Seed demo profile</button>
                         </div>
                     </div>
                 </section>
 
-                <section class="panel">
+            </aside>
+
+            <main class="content">
+                <section class="panel" data-flow-section="setup">
+                    <h2>Device Check</h2>
+                    <p class="sub">Verify the microphone once, then move straight into capture.</p>
+                    <div class="device-box">
+                        <label class="label" for="mic-device-select">Input Device</label>
+                        <select id="mic-device-select"></select>
+                        <div class="row" style="margin-top: 12px;">
+                            <button class="primary" id="device-enable-btn">Start device check</button>
+                            <button class="secondary" id="device-stop-btn">Stop</button>
+                            <span id="device-status" style="color: var(--muted); font-size: 14px;">Not started.</span>
+                        </div>
+                        <div class="meter" style="margin-top: 14px;"><div id="level-fill"></div></div>
+                    </div>
+                </section>
+                <section class="panel" data-flow-section="setup">
                     <h2>Profile Memory</h2>
                     <p class="sub">Import screenshots and writing samples. Voice Right turns them into live vocabulary and context.</p>
                     <div class="device-box" style="margin-bottom: 14px;">
@@ -792,28 +1014,49 @@
                     <div class="chip-list" id="term-chips" style="margin-top: 14px;"></div>
                     <div class="memory-list" id="memory-list" style="margin-top: 14px;"></div>
                 </section>
-            </aside>
-
-            <main class="content">
-                <section class="panel">
-                    <h2>Device Check</h2>
-                    <p class="sub">Verify the microphone once, then move straight into capture.</p>
-                    <div class="device-box">
-                        <label class="label" for="mic-device-select">Input Device</label>
-                        <select id="mic-device-select"></select>
-                        <div class="row" style="margin-top: 12px;">
-                            <button class="primary" id="device-enable-btn">Start device check</button>
-                            <button class="secondary" id="device-stop-btn">Stop</button>
-                            <span id="device-status" style="color: var(--muted); font-size: 14px;">Not started.</span>
-                        </div>
-                        <div class="meter" style="margin-top: 14px;"><div id="level-fill"></div></div>
-                    </div>
-                </section>
                 <section class="panel">
                     <h2>Compose Once, Output Everywhere</h2>
-                    <p class="sub">Speak once. Voice Right recovers the transcript, plans the action, and drafts the result for every selected app.</p>
-                    <div class="compose-grid">
+                    <p class="sub">Voice-right assistant for high-stakes comms: one capture pipeline from transcript recovery to routed action execution.</p>
+                    <div class="flow-shell" data-flow-section="compose">
+                        <div class="flow-line">
+                            <span class="flow-chip active">1 Record</span>
+                            <span class="flow-chip active">2 Recover</span>
+                            <span class="flow-chip active">3 Format</span>
+                            <span class="flow-chip active">4 Tune</span>
+                            <span class="flow-chip active">5 Ship</span>
+                        </div>
+                        <label class="label" for="flow-compose-input">Compose</label>
+                        <textarea id="flow-compose-input" placeholder="Tap mic or type: 'Reply to Sarah about Thursday's call, keep it warm and short.'"></textarea>
+                        <div class="flow-line">
+                            <button class="mic-button" id="flow-mic-btn">🎙</button>
+                            <button class="primary" id="flow-run-btn">Voice Right Record</button>
+                            <span id="flow-status" style="color: var(--muted); font-size: 13px;">Ready.</span>
+                        </div>
+                        <label class="label">Format & Ship</label>
+                        <div class="flow-tabs" id="flow-tabs">
+                            <button class="flow-tab active" data-flow-app="email">Email reply</button>
+                            <button class="flow-tab" data-flow-app="message">Message</button>
+                            <button class="flow-tab" data-flow-app="slack">Slack</button>
+                            <button class="flow-tab" data-flow-app="discord">Discord</button>
+                        </div>
+                        <div class="response-box flow-draft" id="flow-draft-box"><span class="empty">Draft appears here after Record.</span></div>
+                        <div class="flow-line">
+                            <button class="secondary" id="flow-tune-btn">Voice Right Tune</button>
+                            <button class="secondary" id="flow-tune-mic-btn">🎙 Tune by voice</button>
+                            <button class="secondary" id="flow-copy-btn">Voice Right Copy</button>
+                            <button class="primary" id="flow-ship-btn">Ship</button>
+                        </div>
+                        <div class="flow-proof" id="flow-proof">Route: -- | Confidence: -- | Learning: --</div>
+                    </div>
+                    <div class="compose-grid" data-flow-section="compose">
                         <div class="stack">
+                            <label class="label" for="demo-scenario">Demo Scenario</label>
+                            <select id="demo-scenario">
+                                <option value="">None (custom input)</option>
+                                <option value="work_followup">Work follow-up</option>
+                                <option value="client_update">Client update</option>
+                                <option value="teammate_escalation">Teammate escalation</option>
+                            </select>
                             <label class="label">Select Outputs</label>
                             <div class="target-list" id="target-list">
                                 <label class="target"><input type="checkbox" value="email" checked> Email</label>
@@ -833,6 +1076,10 @@
                             <label class="target" style="width: fit-content;">
                                 <input type="checkbox" id="auto-send-high-confidence">
                                 Auto-send when confidence ≥ 90%
+                            </label>
+                            <label class="target" style="width: fit-content;">
+                                <input type="checkbox" id="force-cloud-fallback">
+                                Force cloud fallback (demo)
                             </label>
                             <div class="row">
                                 <button class="mic-button" id="compose-mic">🎙</button>
@@ -857,9 +1104,9 @@
                         </div>
                     </div>
 
-                    <div class="routing-badge" id="routing-badge" aria-live="polite"></div>
+                    <div class="routing-badge" id="routing-badge" aria-live="polite" data-flow-section="compose"></div>
 
-                    <div class="panel" style="margin-top:16px; padding:18px;">
+                    <div class="panel" style="margin-top:16px; padding:18px;" data-flow-section="review">
                         <h2 style="font-size:20px; margin-bottom:6px;">Demo Lab</h2>
                         <p class="sub" style="margin-bottom:12px;">Show measurable improvement, latency, and baseline-vs-personalized quality.</p>
                         <div class="mini-grid">
@@ -868,15 +1115,31 @@
                             <div class="mini-kpi"><strong id="kpi-improvement">0%</strong><span>Estimated error reduction</span></div>
                             <div class="mini-kpi"><strong id="kpi-battle">--</strong><span>Shadow mode winner</span></div>
                         </div>
+                        <div class="demo-steps" id="guided-demo-steps">
+                            <div class="demo-step" id="step-local"><strong>Step 1</strong>Local-first run pending</div>
+                            <div class="demo-step" id="step-cloud"><strong>Step 2</strong>Cloud fallback run pending</div>
+                            <div class="demo-step" id="step-learning"><strong>Step 3</strong>Learning proof pending</div>
+                        </div>
                         <div class="replay-panel" id="replay-panel">
                             <strong>Correction Replay</strong>
                             <div class="line" id="replay-before">Before: --</div>
                             <div class="line" id="replay-after">After: --</div>
                             <div class="line" id="replay-learned">Learned terms: --</div>
+                            <div class="row" style="margin-top: 8px;">
+                                <button class="secondary" id="run-learning-proof">Run learning proof</button>
+                            </div>
+                        </div>
+                        <div class="agent-trace" id="agent-trace">
+                            <strong style="font-size:12px; letter-spacing:0.1em; color:var(--soft); text-transform:uppercase;">Agent Trace</strong>
+                            <div class="trace-row"><span class="trace-chip" id="trace-hear">Hear</span><span class="trace-detail" id="trace-hear-detail">Awaiting input</span></div>
+                            <div class="trace-row"><span class="trace-chip" id="trace-understand">Understand</span><span class="trace-detail" id="trace-understand-detail">No transcript yet</span></div>
+                            <div class="trace-row"><span class="trace-chip" id="trace-plan">Plan</span><span class="trace-detail" id="trace-plan-detail">No route selected</span></div>
+                            <div class="trace-row"><span class="trace-chip" id="trace-act">Act</span><span class="trace-detail" id="trace-act-detail">Awaiting approval/send</span></div>
+                            <div class="trace-row"><span class="trace-chip" id="trace-learn">Learn</span><span class="trace-detail" id="trace-learn-detail">No correction captured</span></div>
                         </div>
                     </div>
 
-                    <div class="action-panel" id="action-plan-panel">
+                    <div class="action-panel" id="action-plan-panel" data-flow-section="review">
                         <h3>Proposed Action</h3>
                         <p id="action-plan-text"></p>
                         <div class="confirm-row" id="confirm-row">
@@ -886,12 +1149,12 @@
                         </div>
                     </div>
 
-                    <div class="action-panel" id="execution-panel">
+                    <div class="action-panel" id="execution-panel" data-flow-section="review">
                         <h3>Execution Result</h3>
                         <p id="execution-text"></p>
                     </div>
 
-                    <div class="output-grid" id="output-grid">
+                    <div class="output-grid" id="output-grid" data-flow-section="review">
                         <div class="output-card email-card">
                             <h3>Email</h3>
                             <div class="response-box" id="output-email"><span class="empty">Email draft appears here.</span></div>
@@ -926,9 +1189,15 @@
                         </div>
                     </div>
 
-                    <div class="actions-panel" id="actions-panel">
+                    <div class="actions-panel" id="actions-panel" data-flow-section="review">
                         <h3>Actions executed</h3>
                         <div class="actions-list" id="actions-list"></div>
+                    </div>
+                    <div class="why-panel" id="why-panel" data-flow-section="review">
+                        <h3>Why this output</h3>
+                        <div class="why-list" id="why-list">
+                            <div class="empty">Run compose to see transcript evidence, routing decision, and action rationale.</div>
+                        </div>
                     </div>
                 </section>
             </main>
@@ -943,12 +1212,44 @@
         let lastProfileCorrectionCount = 0;
         let correctionLiftEstimate = 0;
         let lastCorrectionReplay = { before: '', after: '', learned: [] };
+        let flowTargetApp = 'email';
+        let flowTuneRecording = false;
+        let flowTuneRecorder = null;
+        let hackathonMode = false;
+        let guidedDemoRunning = false;
+        let activeFlowStage = 'setup';
         let composeRecording = false;
         let composeRecorder = null;
         let gmailState = { connected: false, configured: false, email: "" };
         const micState = { stream: null, audioCtx: null, analyser: null, rafId: null, selectedDeviceId: "" };
 
         function qs(id) { return document.getElementById(id); }
+        function setFlowStage(stage) {
+            activeFlowStage = stage;
+            const grid = qs('app-grid');
+            const sidebar = qs('setup-sidebar');
+            grid.classList.remove('stage-setup', 'stage-compose', 'stage-review');
+            grid.classList.add(`stage-${stage}`);
+            document.querySelectorAll('[data-flow-section]').forEach((node) => {
+                const match = node.getAttribute('data-flow-section') === stage;
+                node.style.display = match ? '' : 'none';
+            });
+            ['setup', 'compose', 'review'].forEach((name) => {
+                const tab = qs(`flow-tab-${name}`);
+                if (!tab) return;
+                tab.classList.toggle('active', name === stage);
+            });
+            if (stage === 'setup') {
+                grid.classList.remove('focus-main');
+                if (sidebar) sidebar.style.display = '';
+            } else {
+                grid.classList.add('focus-main');
+                if (sidebar) sidebar.style.display = 'none';
+            }
+            if (stage === 'review') {
+                qs('compose-status').textContent = qs('compose-status').textContent || 'Review your generated outputs.';
+            }
+        }
         function escapeHtml(value) {
             return String(value).replace(/[&<>"']/g, (c) => ({ "&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;" }[c]));
         }
@@ -1013,6 +1314,72 @@
                 : `<span class="empty">${escapeHtml(emptyText)}</span>`;
         }
 
+        function renderFlowProof(result = null) {
+            const current = result || lastComposeResult || {};
+            const route = String(current?.routing?.source || '--');
+            const confidence = current?.routing?.confidence != null ? `${Math.round(Number(current.routing.confidence) * 100)}%` : '--';
+            const learned = Array.isArray(lastCorrectionReplay?.learned) && lastCorrectionReplay.learned.length ? 'updated' : '--';
+            const node = qs('flow-proof');
+            if (!node) return;
+            node.textContent = `Route: ${route} | Confidence: ${confidence} | Learning: ${learned}`;
+        }
+
+        function renderFlowDraft() {
+            const box = qs('flow-draft-box');
+            if (!box) return;
+            const outputs = lastComposeResult?.outputs || {};
+            const value = String(outputs?.[flowTargetApp] || '').trim();
+            box.innerHTML = value ? escapeHtml(value) : '<span class="empty">Draft appears here after Record.</span>';
+            document.querySelectorAll('#flow-tabs .flow-tab').forEach((tab) => {
+                tab.classList.toggle('active', tab.dataset.flowApp === flowTargetApp);
+            });
+            renderFlowProof(lastComposeResult);
+        }
+
+        function compactText(value, maxSentences = 1) {
+            const cleaned = String(value || '').replace(/\s+/g, ' ').trim();
+            if (!cleaned) return '';
+            const sentences = cleaned.match(/[^.!?]+[.!?]?/g) || [cleaned];
+            return sentences.slice(0, Math.max(1, maxSentences)).join(' ').trim();
+        }
+
+        function tuneDraftLocally(draft, instruction, app) {
+            const original = String(draft || '').trim();
+            const cmd = String(instruction || '').toLowerCase();
+            if (!original || !cmd) return '';
+
+            const wantsShorter = /\b(short|shorter|concise|brief)\b/.test(cmd);
+            const wantsDirect = /\b(direct|crisp)\b/.test(cmd);
+            const wantsWarmer = /\b(warm|warmer|friendly)\b/.test(cmd);
+            const wantsCTA = /\b(call to action|cta|next step)\b/.test(cmd);
+            if (!wantsShorter && !wantsDirect && !wantsWarmer && !wantsCTA) return '';
+
+            if (app === 'email') {
+                const subjectMatch = original.match(/^Subject:\s*(.+)$/im);
+                const subject = subjectMatch ? subjectMatch[1].trim() : 'Quick update';
+                const greetingMatch = original.match(/\b(Hi|Hello|Hey)\s+([A-Za-z ]+),/i);
+                const recipient = greetingMatch ? greetingMatch[2].trim() : 'Team';
+                const signoffMatch = original.match(/\n(Thanks|Best|Regards),?\s*\n([A-Za-z]+)/i);
+                const signoff = signoffMatch ? `${signoffMatch[1]},\n${signoffMatch[2]}` : 'Thanks,\nNeil';
+                const bodyRaw = original
+                    .replace(/^Subject:.*$/im, '')
+                    .replace(/\b(Hi|Hello|Hey)\s+[A-Za-z ]+,/i, '')
+                    .replace(/\n(Thanks|Best|Regards),?\s*\n[A-Za-z]+/i, '')
+                    .trim();
+                let body = bodyRaw || 'Quick update.';
+                if (wantsShorter || wantsDirect) body = compactText(body, 1);
+                if (wantsWarmer) body = `${body.replace(/[.!?]*$/, '')}. Thanks again for the quick support.`;
+                if (wantsCTA) body = `${body.replace(/[.!?]*$/, '')}. If this works for you, please confirm by EOD.`;
+                return `Subject: ${compactText(subject, 1).replace(/[.!?]*$/, '')}\n\nHi ${recipient},\n\n${body}\n\n${signoff}`;
+            }
+
+            let body = original;
+            if (wantsShorter || wantsDirect) body = compactText(body, 1);
+            if (wantsWarmer) body = `${body.replace(/[.!?]*$/, '')} Appreciate your help on this.`;
+            if (wantsCTA) body = `${body.replace(/[.!?]*$/, '')} Please confirm next steps today.`;
+            return body.trim();
+        }
+
         function renderRoutingBadge(routing) {
             const badge = qs('routing-badge');
             if (!navigator.onLine) {
@@ -1028,8 +1395,15 @@
             const confidence = typeof routing.confidence === 'number'
                 ? Math.round(routing.confidence * 100)
                 : Math.max(1, parseInt(String(routing.label || '').match(/(\d+)%/)?.[1] || '0', 10));
-            badge.className = 'routing-badge local';
-            badge.textContent = `⚡ On-device · Gemma 4 E4B · ${confidence}% confidence`;
+            const source = String(routing.source || '').toLowerCase();
+            const label = String(routing.label || '').toLowerCase();
+            if (source === 'cloud' || label.includes('cloud')) {
+                badge.className = 'routing-badge cloud';
+                badge.textContent = `☁️ Cloud fallback engaged · ${confidence}% confidence`;
+            } else {
+                badge.className = 'routing-badge local';
+                badge.textContent = `⚡ On-device primary path · ${confidence}% confidence`;
+            }
             requestAnimationFrame(() => badge.classList.add('visible'));
         }
 
@@ -1115,7 +1489,15 @@
             }
         }
 
-        function renderExecutionResult(execution) {
+        function inferExecutionMode(execution, actions) {
+            const list = Array.isArray(actions) ? actions : [];
+            const hasReal = list.some((item) => item && typeof item === 'object' && (item.gmail_message_id || item.gmail_draft_id || item.slack_ts));
+            if (hasReal) return 'real integration';
+            if (execution?.status === 'executed') return 'graceful fallback';
+            return '';
+        }
+
+        function renderExecutionResult(execution, actions) {
             const panel = qs('execution-panel');
             const text = qs('execution-text');
             if (!execution || !execution.status) {
@@ -1126,14 +1508,54 @@
             const parts = [];
             if (execution.title) parts.push(execution.title);
             if (execution.detail) parts.push(execution.detail);
+            const mode = inferExecutionMode(execution, actions);
+            if (mode) parts.push(`Mode: ${mode}`);
             if (!parts.length) parts.push(execution.summary || execution.status || 'Pending');
             text.textContent = parts.join('\n');
             panel.classList.add('visible');
         }
 
+        function renderWhyPanel(result) {
+            const wrap = qs('why-list');
+            const evidence = [];
+            const stt = result?.stt || {};
+            if (result?.transcript) {
+                evidence.push(`Recovered transcript: "${String(result.transcript).slice(0, 180)}${String(result.transcript).length > 180 ? '…' : ''}"`);
+            }
+            if (stt?.parakeet || stt?.whisper_pass2 || stt?.whisper_pass1) {
+                evidence.push(`STT reconciliation used Parakeet + Whisper passes before final correction.`);
+            }
+            if (result?.routing) {
+                const routeLabel = result.routing.source === 'cloud' ? 'Cloud fallback route' : 'On-device route';
+                evidence.push(`${routeLabel} at ${Math.round(Number(result.routing.confidence || 0) * 100)}% confidence.`);
+            }
+            if (result?.action_plan?.summary) {
+                evidence.push(`Planned action: ${result.action_plan.summary}.`);
+            }
+            const calls = Array.isArray(result?.function_calls) ? result.function_calls : [];
+            if (calls.length) {
+                evidence.push(`Function calls: ${calls.map((c) => c?.name).filter(Boolean).join(', ')}.`);
+            }
+            wrap.innerHTML = evidence.length
+                ? evidence.map((item) => `<div>• ${escapeHtml(item)}</div>`).join('')
+                : '<div class="empty">Run compose to see transcript evidence, routing decision, and action rationale.</div>';
+        }
+
         function extractEmailSubjectAndBody(emailText, fallbackTranscript) {
             const text = String(emailText || '').trim();
             const transcript = String(fallbackTranscript || '').trim();
+            const cleanSubject = (raw) => {
+                let subject = String(raw || '').replace(/\s+/g, ' ').trim();
+                if (!subject) return 'Quick update';
+                subject = subject
+                    .replace(/^subject:\s*/i, '')
+                    .replace(/\b(sent|send|sending)\b.*$/i, '')
+                    .replace(/\b(hi|hello|hey)\b.*$/i, '')
+                    .replace(/[.?!].*$/, '')
+                    .trim();
+                if (subject.length > 72) subject = `${subject.slice(0, 69).trimEnd()}...`;
+                return subject || 'Quick update';
+            };
             if (!text) {
                 return { subject: 'Quick update', body: transcript };
             }
@@ -1152,7 +1574,7 @@
                     .split(/\b(?:Hi|Hello|Hey)\b/i)[0]
                     .split(/\b(?:Thanks|Best regards|Best|Regards|Cheers)\b/i)[0]
                     .trim();
-                subject = inlineSubject || subject;
+                subject = cleanSubject(inlineSubject || subject);
             }
             const bodyLines = lines.filter((line) => {
                 const lower = line.toLowerCase();
@@ -1163,7 +1585,7 @@
                 return true;
             });
             return {
-                subject,
+                subject: cleanSubject(subject),
                 body: bodyLines.join('\n\n').trim() || transcript || text,
             };
         }
@@ -1289,6 +1711,34 @@
                 }
             }
 
+            // Fill common missing tabs for demo clarity.
+            const selected = new Set(selectedTargets());
+            const baseEmail = String(outputs.email || '').trim();
+            const baseMessage = String(outputs.message || '').trim();
+            const baseSlack = String(outputs.slack || '').trim();
+            const fallbackBody = (
+                baseMessage
+                || baseSlack
+                || baseEmail.replace(/^Subject:.*$/im, '').replace(/\n+/g, ' ').trim()
+                || transcript
+            ).trim();
+
+            if (selected.has('message') && !String(outputs.message || '').trim()) {
+                outputs.message = fallbackBody
+                    ? `Hey Team, ${fallbackBody.replace(/^hey\s+\w+,\s*/i, '')}`
+                    : 'Hey Team, quick update from Voice Right.';
+            }
+            if (selected.has('slack') && !String(outputs.slack || '').trim()) {
+                outputs.slack = fallbackBody
+                    ? `Team update: ${fallbackBody.replace(/^hey\s+\w+,\s*/i, '')}`
+                    : 'Team update: quick status update ready.';
+            }
+            if (selected.has('discord') && !String(outputs.discord || '').trim()) {
+                outputs.discord = fallbackBody
+                    ? `${fallbackBody.replace(/^hey\s+\w+,\s*/i, '')} 🚀`
+                    : 'Quick update is ready 🚀';
+            }
+
             return outputs;
         }
 
@@ -1323,6 +1773,7 @@
             if (result) {
                 result.outputs = displayOutputs;
             }
+            renderFlowDraft();
         }
 
         function showLearned(target) {
@@ -1403,6 +1854,44 @@
                 }).join(' · ')
                 : '--';
             qs('replay-learned').textContent = `Learned terms: ${learned}`;
+            renderFlowProof(lastComposeResult);
+        }
+
+        function setGuidedDemoStep(step, status) {
+            const map = {
+                local: qs('step-local'),
+                cloud: qs('step-cloud'),
+                learning: qs('step-learning'),
+            };
+            const node = map[step];
+            if (!node) return;
+            node.classList.remove('active', 'done');
+            if (status === 'active') node.classList.add('active');
+            if (status === 'done') node.classList.add('done');
+        }
+
+        function resetGuidedDemoSteps() {
+            setGuidedDemoStep('local', 'idle');
+            setGuidedDemoStep('cloud', 'idle');
+            setGuidedDemoStep('learning', 'idle');
+        }
+
+        function setAgentTrace(stage, status, detail) {
+            const chip = qs(`trace-${stage}`);
+            const detailNode = qs(`trace-${stage}-detail`);
+            if (!chip || !detailNode) return;
+            chip.classList.remove('active', 'done');
+            if (status === 'active') chip.classList.add('active');
+            if (status === 'done') chip.classList.add('done');
+            if (detail) detailNode.textContent = detail;
+        }
+
+        function resetAgentTrace() {
+            setAgentTrace('hear', 'idle', 'Awaiting input');
+            setAgentTrace('understand', 'idle', 'No transcript yet');
+            setAgentTrace('plan', 'idle', 'No route selected');
+            setAgentTrace('act', 'idle', 'Awaiting approval/send');
+            setAgentTrace('learn', 'idle', 'No correction captured');
         }
 
         async function fetchShadowBattle(payload) {
@@ -1421,6 +1910,20 @@
             const p = String(personalized || '').trim();
             const b = String(baseline || '').trim();
             if (!p || !b) return { winner: '--', lift: 0 };
+            const terms = Array.isArray(profile?.terms) ? profile.terms.map((item) => {
+                if (item && typeof item === 'object') return String(item.text || '').trim();
+                return String(item || '').trim();
+            }).filter(Boolean) : [];
+            if (terms.length) {
+                const pLower = p.toLowerCase();
+                const bLower = b.toLowerCase();
+                const pHits = terms.filter((term) => pLower.includes(term.toLowerCase())).length;
+                const bHits = terms.filter((term) => bLower.includes(term.toLowerCase())).length;
+                if (pHits > bHits) {
+                    const lift = Math.max(1, Math.round(((pHits - bHits) / Math.max(1, terms.length)) * 100));
+                    return { winner: `Personalized +${lift}%`, lift };
+                }
+            }
             const pWords = tokenSet(p);
             const bWords = tokenSet(b);
             const pRichness = pWords.size;
@@ -1719,6 +2222,7 @@
 
         async function submitCorrection(target) {
             if (!lastComposeResult?.outputs?.[target]) return;
+            setAgentTrace('learn', 'active', 'Applying correction...');
             const input = qs(`correct-${target}`);
             const corrected = input.value.trim();
             if (!corrected) return;
@@ -1745,8 +2249,10 @@
                 input.value = '';
                 showLearned(target);
                 await refreshProfile();
+                setAgentTrace('learn', 'done', `Learned: ${original} -> ${corrected}`);
             } catch (err) {
                 qs('compose-status').textContent = `Correction failed: ${err.message}`;
+                setAgentTrace('learn', 'idle', 'Correction failed');
             }
         }
 
@@ -1758,11 +2264,11 @@
             const typedTranscript = String(typedSource).trim();
                 const useTypedPath = Boolean(typedTranscript);
                 const audioB64 = useTypedPath ? '' : (options.audioB64 || '');
+                resetAgentTrace();
+                setAgentTrace('hear', 'active', useTypedPath ? 'Typed fallback input used' : 'Capturing spoken input');
                 const withIntentMemory = useTypedPath ? applyIntentMemory(typedTranscript) : '';
-                const domainPrefix = useTypedPath ? domainPackPrefix() : '';
-                const finalTranscriptInput = useTypedPath
-                    ? [domainPrefix, withIntentMemory].filter(Boolean).join('\n')
-                    : '';
+                const finalTranscriptInput = useTypedPath ? withIntentMemory : '';
+                const selectedDomainPack = useTypedPath ? qs('domain-pack').value : 'none';
                 lastComposeInput = {
                     transcript: useTypedPath ? finalTranscriptInput : '',
                     audioB64,
@@ -1772,6 +2278,8 @@
                     target_apps: selectedTargets(),
                     transcript: useTypedPath ? finalTranscriptInput : '',
                     audio_b64: audioB64,
+                    domain_pack: selectedDomainPack,
+                    force_cloud: qs('force-cloud-fallback').checked,
                     approved: Boolean(options.approved),
                     execute: Boolean(options.execute),
                 };
@@ -1785,16 +2293,32 @@
                     throw new Error(result.error);
                 }
                 lastComposeResult = result;
+                setAgentTrace('hear', 'done', useTypedPath ? 'Input captured from typed fallback' : 'Voice captured');
+                setAgentTrace('understand', 'done', `Transcript ready (${(result.transcript || '').length} chars)`);
+                const source = String(result?.routing?.source || 'local');
+                const conf = Math.round(Number(result?.routing?.confidence || 0) * 100);
+                setAgentTrace('plan', 'done', `${source === 'cloud' ? 'Cloud fallback' : 'Local route'} at ${conf}% confidence`);
+                const actionState = String(result?.execution_result?.status || 'draft_ready');
+                setAgentTrace('act', actionState === 'executed' ? 'done' : 'active', `State: ${actionState}`);
                 renderResponseBox('transcript-box', result.transcript, 'Your corrected transcript will appear here.');
                 renderTranscriptComparison(result);
                 renderResponseBox('intent-box', result.intent, 'Voice Right will summarize what you are trying to communicate.');
                 renderRoutingBadge(result.routing);
                 renderActionPlan(result.action_plan);
-                renderExecutionResult(result.execution_result);
+                renderExecutionResult(result.execution_result, result.actions);
                 renderOutputs(result);
                 renderActions(result.actions);
-                const shadowResult = await fetchShadowBattle(payload);
-                updateDemoLab(result, performance.now() - startedAt, shadowResult);
+                renderWhyPanel(result);
+                updateDemoLab(result, performance.now() - startedAt, null);
+                if (hackathonMode || activeFlowStage === 'review') {
+                    fetchShadowBattle(payload).then((shadowResult) => {
+                        if (!shadowResult) return;
+                        if (lastComposeResult === result) {
+                            updateDemoLab(result, performance.now() - startedAt, shadowResult);
+                        }
+                    });
+                }
+                setFlowStage('review');
 
                 const autoSend = qs('auto-send-high-confidence').checked;
                 const confidence = Number(result?.routing?.confidence || 0);
@@ -1803,12 +2327,156 @@
                     approveCurrentDraft();
                     await qs('send-action-btn').onclick();
                     status.textContent = 'High confidence: auto-sent.';
+                    setAgentTrace('act', 'done', 'Auto-send completed');
                     return;
                 }
                 status.textContent = 'Done.';
             } catch (err) {
                 status.textContent = `Generate failed: ${err.message}`;
+                setAgentTrace('understand', 'idle', 'Pipeline failed');
                 alert(`Generate failed: ${err.message}`);
+            }
+        }
+
+        function hackathonScenarioPayload(key) {
+            const scripts = {
+                work_followup: {
+                    text: 'Hi Sarah, quick follow-up: we shipped the onboarding fix and I want to send a concise update with next steps.',
+                    targets: ['email', 'message'],
+                    domain: 'engineering',
+                },
+                client_update: {
+                    text: 'Send a polished status update to the client team on launch timing, risks, and next-week expectations.',
+                    targets: ['email', 'slack'],
+                    domain: 'sales',
+                },
+                teammate_escalation: {
+                    text: 'Message Alex that we have a blocker on auth and need immediate help to unblock the production timeline.',
+                    targets: ['message', 'slack'],
+                    domain: 'engineering',
+                },
+            };
+            return scripts[key] || null;
+        }
+
+        function applyScenario(key) {
+            const scenario = hackathonScenarioPayload(key);
+            if (!scenario) return;
+            qs('compose-text').value = scenario.text;
+            qs('domain-pack').value = scenario.domain;
+            const selected = new Set(scenario.targets);
+            document.querySelectorAll('#target-list input[type="checkbox"]').forEach((input) => {
+                input.checked = selected.has(input.value);
+            });
+        }
+
+        async function toggleHackathonMode() {
+            const btn = qs('hackathon-mode-btn');
+            hackathonMode = !hackathonMode;
+            if (!hackathonMode) {
+                btn.classList.remove('active');
+                btn.textContent = 'Hackathon mode: off';
+                qs('compose-status').textContent = 'Hackathon mode disabled.';
+                return;
+            }
+            btn.classList.add('active');
+            btn.textContent = 'Hackathon mode: on';
+            qs('compose-status').textContent = 'Enabling hackathon mode...';
+            try {
+                await fetchJson('/api/demo/seed', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ profile: activeProfile }),
+                });
+                await refreshProfile();
+                qs('auto-send-high-confidence').checked = true;
+                qs('force-cloud-fallback').checked = false;
+                qs('demo-scenario').value = 'client_update';
+                applyScenario('client_update');
+                qs('compose-status').textContent = 'Hackathon mode ready: killer scenario + reliable send + hybrid toggle.';
+            } catch (err) {
+                hackathonMode = false;
+                btn.classList.remove('active');
+                btn.textContent = 'Hackathon mode: off';
+                qs('compose-status').textContent = `Hackathon mode failed: ${err.message}`;
+            }
+        }
+
+        async function runLearningProof() {
+            const status = qs('compose-status');
+            const previousText = qs('compose-text').value;
+            const previousScenario = qs('demo-scenario').value;
+            try {
+                setAgentTrace('learn', 'active', 'Running learning proof');
+                status.textContent = 'Learning proof: first run...';
+                qs('compose-text').value = 'Email the client that gama four routing is now stable for demo day.';
+                qs('demo-scenario').value = '';
+                await composeFromInput();
+                const before = lastComposeResult?.transcript || 'gama four routing is now stable';
+                status.textContent = 'Learning proof: teaching correction...';
+                const correction = await fetchJson('/api/correction', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        profile: activeProfile,
+                        original: 'gama four',
+                        corrected: 'Gemma 4',
+                    }),
+                });
+                lastCorrectionReplay = {
+                    before: 'gama four',
+                    after: 'Gemma 4',
+                    learned: Array.isArray(correction.learned) ? correction.learned : [],
+                };
+                renderCorrectionReplay();
+                status.textContent = 'Learning proof: rerunning...';
+                await composeFromInput();
+                qs('replay-before').textContent = `Before: ${before}`;
+                qs('replay-after').textContent = `After: ${lastComposeResult?.transcript || '--'}`;
+                status.textContent = 'Learning proof complete.';
+                setAgentTrace('learn', 'done', 'Before/after replay captured');
+                await refreshProfile();
+            } catch (err) {
+                status.textContent = `Learning proof failed: ${err.message}`;
+                setAgentTrace('learn', 'idle', 'Learning proof failed');
+            } finally {
+                if (previousText) qs('compose-text').value = previousText;
+                qs('demo-scenario').value = previousScenario || '';
+            }
+        }
+
+        async function runGuidedDemo() {
+            const status = qs('compose-status');
+            const forceCloudToggle = qs('force-cloud-fallback');
+            if (guidedDemoRunning) return;
+            guidedDemoRunning = true;
+            try {
+                resetGuidedDemoSteps();
+                setGuidedDemoStep('local', 'active');
+                status.textContent = 'Guided demo: local-first run...';
+                qs('demo-scenario').value = 'client_update';
+                applyScenario('client_update');
+                forceCloudToggle.checked = false;
+                await composeFromInput();
+
+                setGuidedDemoStep('local', 'done');
+                setGuidedDemoStep('cloud', 'active');
+                status.textContent = 'Guided demo: cloud fallback run...';
+                forceCloudToggle.checked = true;
+                await composeFromInput();
+
+                setGuidedDemoStep('cloud', 'done');
+                setGuidedDemoStep('learning', 'active');
+                status.textContent = 'Guided demo: learning proof...';
+                await runLearningProof();
+
+                setGuidedDemoStep('learning', 'done');
+                forceCloudToggle.checked = false;
+                status.textContent = 'Guided demo complete. You can now click Send now.';
+            } catch (err) {
+                status.textContent = `Guided demo failed: ${err.message}`;
+            } finally {
+                guidedDemoRunning = false;
             }
         }
 
@@ -1863,6 +2531,20 @@
         });
 
         qs('create-profile-btn').onclick = createProfile;
+        qs('seed-demo-btn').onclick = async () => {
+            try {
+                qs('compose-status').textContent = 'Seeding demo profile...';
+                await fetchJson('/api/demo/seed', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ profile: activeProfile }),
+                });
+                await refreshProfile();
+                qs('compose-status').textContent = 'Demo profile seeded.';
+            } catch (err) {
+                qs('compose-status').textContent = `Seed failed: ${err.message}`;
+            }
+        };
         qs('save-memory-text').onclick = importTextMemory;
         qs('gmail-connect-btn').onclick = () => {
             window.location.href = `/api/gmail/connect?profile=${encodeURIComponent(activeProfile)}`;
@@ -1908,6 +2590,126 @@
             }
             await composeFromInput();
         };
+        qs('flow-run-btn').onclick = async () => {
+            qs('compose-text').value = qs('flow-compose-input').value.trim();
+            document.querySelectorAll('#target-list input[type="checkbox"]').forEach((input) => {
+                input.checked = ['email', 'message', 'slack', 'discord'].includes(input.value);
+            });
+            qs('flow-status').textContent = 'Running record/recover...';
+            await composeFromInput();
+            qs('flow-status').textContent = 'Done.';
+            renderFlowDraft();
+        };
+        qs('flow-mic-btn').onclick = async () => {
+            qs('flow-status').textContent = composeRecording ? 'Stopping recording...' : 'Recording...';
+            await toggleComposeRecording();
+            qs('flow-status').textContent = composeRecording ? 'Recording...' : 'Voice captured.';
+            if (!composeRecording) renderFlowDraft();
+        };
+        qs('flow-tune-btn').onclick = async () => {
+            if (!lastComposeResult?.outputs?.[flowTargetApp]) {
+                qs('flow-status').textContent = 'Generate a draft first.';
+                return;
+            }
+            const instruction = window.prompt('How should I tune this draft? (e.g. "shorter", "warmer", "more direct")', 'shorter');
+            if (!instruction) return;
+            const localTuned = tuneDraftLocally(lastComposeResult.outputs[flowTargetApp], instruction, flowTargetApp);
+            if (localTuned) {
+                lastComposeResult.outputs[flowTargetApp] = localTuned;
+                renderOutputs(lastComposeResult);
+                qs('flow-status').textContent = 'Tuned.';
+                return;
+            }
+            qs('compose-text').value = `same as last but ${instruction}`;
+            qs('flow-status').textContent = 'Tuning...';
+            await composeFromInput();
+            qs('flow-status').textContent = 'Tuned.';
+            renderFlowDraft();
+        };
+        qs('flow-tune-mic-btn').onclick = async () => {
+            if (!lastComposeResult?.outputs?.[flowTargetApp]) {
+                qs('flow-status').textContent = 'Generate a draft first.';
+                return;
+            }
+            const tuneBtn = qs('flow-tune-mic-btn');
+            try {
+                if (!flowTuneRecording) {
+                    qs('flow-status').textContent = 'Recording tune instruction... tap again to stop.';
+                    tuneBtn.textContent = '■ Stop tune';
+                    flowTuneRecorder = await startBrowserRecording(window.__voiceRightMicDeviceId || micState.selectedDeviceId);
+                    flowTuneRecording = true;
+                    return;
+                }
+                qs('flow-status').textContent = 'Applying spoken tune...';
+                tuneBtn.textContent = '🎙 Tune by voice';
+                const baseDraft = String(lastComposeResult?.outputs?.[flowTargetApp] || '').trim();
+                const tuneBlob = await flowTuneRecorder.stop();
+                flowTuneRecorder = null;
+                flowTuneRecording = false;
+                const tuneAudioB64 = await blobToBase64(tuneBlob);
+                const tuneResult = await fetchJson('/api/compose', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        profile: activeProfile,
+                        target_apps: ['email'],
+                        transcript: '',
+                        audio_b64: tuneAudioB64,
+                        approved: false,
+                        execute: false,
+                        force_cloud: false,
+                    }),
+                });
+                const spokenInstruction = String(tuneResult?.transcript || '').trim();
+                if (!spokenInstruction) {
+                    qs('flow-status').textContent = 'No tune instruction heard.';
+                    return;
+                }
+                const localTuned = tuneDraftLocally(baseDraft, spokenInstruction, flowTargetApp);
+                if (localTuned) {
+                    lastComposeResult.outputs[flowTargetApp] = localTuned;
+                    renderOutputs(lastComposeResult);
+                    qs('flow-status').textContent = 'Tuned by voice.';
+                    return;
+                }
+                qs('compose-text').value = `same as last but ${spokenInstruction}`;
+                await composeFromInput();
+                qs('flow-status').textContent = 'Tuned by voice.';
+                renderFlowDraft();
+            } catch (err) {
+                flowTuneRecording = false;
+                flowTuneRecorder = null;
+                tuneBtn.textContent = '🎙 Tune by voice';
+                qs('flow-status').textContent = `Voice tune failed: ${err.message}`;
+            }
+        };
+        qs('flow-copy-btn').onclick = async () => {
+            const draft = String(lastComposeResult?.outputs?.[flowTargetApp] || '').trim();
+            if (!draft) {
+                qs('flow-status').textContent = 'Nothing to copy yet.';
+                return;
+            }
+            try {
+                await navigator.clipboard.writeText(draft);
+                qs('flow-status').textContent = 'Copied.';
+            } catch (_) {
+                qs('flow-status').textContent = 'Copy failed.';
+            }
+        };
+        qs('flow-ship-btn').onclick = async () => {
+            qs('flow-status').textContent = 'Shipping...';
+            await qs('send-action-btn').onclick();
+            qs('flow-status').textContent = 'Shipped.';
+        };
+        document.querySelectorAll('#flow-tabs .flow-tab').forEach((tab) => {
+            tab.addEventListener('click', () => {
+                flowTargetApp = tab.dataset.flowApp || 'email';
+                renderFlowDraft();
+            });
+        });
+        qs('flow-tab-setup').onclick = () => setFlowStage('setup');
+        qs('flow-tab-compose').onclick = () => setFlowStage('compose');
+        qs('flow-tab-review').onclick = () => setFlowStage('review');
         qs('compose-mic').onclick = toggleComposeRecording;
         qs('confirm-action-btn').onclick = async () => {
             approveCurrentDraft();
@@ -1920,6 +2722,25 @@
                 return;
             }
             const status = qs('compose-status');
+            if (hackathonMode) {
+                const demoActions = executableCalls.map((call) => ({
+                    status: 'success',
+                    action: String(call.name || 'prepared_action'),
+                    detail: 'Demo-safe mode prepared this action without live API risk.',
+                }));
+                renderExecutionResult({
+                    status: 'executed',
+                    title: 'Demo-safe execution complete',
+                    detail: 'Prepared actions shown. Live external sends are skipped in hackathon mode for reliability.',
+                }, demoActions);
+                renderActions(demoActions);
+                if (lastComposeResult?.action_plan) {
+                    lastComposeResult.action_plan.status = 'executed';
+                    renderActionPlan(lastComposeResult.action_plan);
+                }
+                status.textContent = 'Demo-safe send complete.';
+                return;
+            }
             status.textContent = 'Sending...';
             try {
                 const result = await fetchJson('/api/execute-action', {
@@ -1934,7 +2755,7 @@
                     throw new Error(result.error);
                 }
                 lastComposeResult.function_calls = executableCalls;
-                renderExecutionResult(result.execution_result);
+                renderExecutionResult(result.execution_result, result.actions);
                 renderActions(result.actions);
                 if (lastComposeResult?.action_plan) {
                     lastComposeResult.action_plan.status = 'executed';
@@ -1947,8 +2768,25 @@
             }
         };
         qs('cancel-action-btn').onclick = () => {
-            renderExecutionResult({ status: 'cancelled', summary: 'Action cancelled. Nothing was executed.' });
+            renderExecutionResult({ status: 'cancelled', summary: 'Action cancelled. Nothing was executed.' }, []);
             qs('confirm-row').classList.remove('visible');
+        };
+        qs('demo-scenario').addEventListener('change', (event) => {
+            const value = String(event.target.value || '');
+            applyScenario(value);
+        });
+        qs('hackathon-mode-btn').onclick = toggleHackathonMode;
+        qs('run-learning-proof').onclick = runLearningProof;
+        qs('run-guided-demo-btn').onclick = async () => {
+            if (!hackathonMode) {
+                qs('compose-status').textContent = 'Enable Hackathon mode first, then run guided demo.';
+                return;
+            }
+            await runGuidedDemo();
+        };
+        qs('compose-submit').ondblclick = async () => {
+            if (!hackathonMode) return;
+            await runGuidedDemo();
         };
         ['email', 'message', 'slack', 'discord'].forEach((target) => {
             qs(`correct-${target}`).addEventListener('keydown', async (event) => {
@@ -1962,6 +2800,9 @@
         window.addEventListener('online', () => renderRoutingBadge(lastComposeResult?.routing || null));
         window.addEventListener('offline', () => renderRoutingBadge(lastComposeResult?.routing || null));
         renderCorrectionReplay();
+        resetAgentTrace();
+        renderFlowDraft();
+        setFlowStage('setup');
         Promise.all([refreshProfiles(), refreshProfile()]).catch(console.error);
     </script>
 </body>

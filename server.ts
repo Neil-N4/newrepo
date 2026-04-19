@@ -1,6 +1,6 @@
 import { $ } from "bun";
 
-const PORT = 3000;
+const PORT = Number(process.env.PORT || 3000);
 const ROOT = process.cwd();
 const PROFILES_DIR = `${ROOT}/data/profiles`;
 const OAUTH_DIR = `${ROOT}/data/oauth`;
@@ -505,6 +505,81 @@ Bun.serve({
             },
         },
 
+        "/api/demo/seed": {
+            async POST(req) {
+                try {
+                    const body = (await req.json().catch(() => ({}))) as { profile?: string };
+                    const id = String(body.profile || "default");
+                    const profile = await loadProfile(id) as any;
+                    const now = new Date().toISOString();
+                    const ensuredTerms = [
+                        "YC Interview",
+                        "Gemma 4",
+                        "Cactus",
+                        "Ikon Pass",
+                        "YBuffet",
+                        "FunctionGemma",
+                    ];
+                    const termSet = new Set(
+                        (Array.isArray(profile.terms) ? profile.terms : [])
+                            .map((term: any) => typeof term === "string" ? term : String(term?.text || ""))
+                            .map((term: string) => term.trim())
+                            .filter(Boolean),
+                    );
+                    for (const term of ensuredTerms) termSet.add(term);
+                    profile.terms = Array.from(termSet).map((text) => ({
+                        id: `term_${Math.random().toString(36).slice(2, 10)}`,
+                        text,
+                        source: "demo-seed",
+                        added: now,
+                    }));
+
+                    const ensuredPeople = ["Sarah", "Alex", "Team", "Client"];
+                    const peopleSet = new Set((Array.isArray(profile.people) ? profile.people : []).map((p: any) => String(p || "").trim()).filter(Boolean));
+                    for (const person of ensuredPeople) peopleSet.add(person);
+                    profile.people = Array.from(peopleSet);
+
+                    const corrections = Array.isArray(profile.corrections) ? profile.corrections : [];
+                    const requiredCorrections = [
+                        { wrong: "gemma for", right: "Gemma 4" },
+                        { wrong: "icon pass", right: "Ikon Pass" },
+                        { wrong: "function gamma", right: "FunctionGemma" },
+                    ];
+                    const correctionKeys = new Set(corrections.map((item: any) => `${String(item?.wrong || "").toLowerCase()}=>${String(item?.right || "").toLowerCase()}`));
+                    for (const correction of requiredCorrections) {
+                        const key = `${correction.wrong.toLowerCase()}=>${correction.right.toLowerCase()}`;
+                        if (!correctionKeys.has(key)) {
+                            corrections.push({
+                                id: `correction_${Math.random().toString(36).slice(2, 10)}`,
+                                wrong: correction.wrong,
+                                right: correction.right,
+                                confidence: 1.0,
+                                uses: 1,
+                                last_applied: now,
+                            });
+                        }
+                    }
+                    profile.corrections = corrections;
+
+                    const writingSamples = Array.isArray(profile.writing_samples) ? profile.writing_samples : [];
+                    if (!writingSamples.length) {
+                        writingSamples.push({
+                            type: "demo-seed",
+                            source: "hackathon",
+                            excerpt: "Subject: Quick update\n\nHi Team,\n\nWe shipped the integration milestone and closed key risks. Next step is validating the end-to-end demo flow before final presentation.\n\nBest,\nNeil",
+                            created_at: now,
+                        });
+                    }
+                    profile.writing_samples = writingSamples;
+                    profile.updated = now;
+                    await saveProfile(id, profile);
+                    return Response.json({ ok: true, profile: id });
+                } catch (err) {
+                    return Response.json({ error: String(err) }, { status: 500 });
+                }
+            },
+        },
+
         "/api/calibrate/generate": {
             async POST(req) {
                 const body = (await req.json().catch(() => ({}))) as { profile?: string; terms?: string[] };
@@ -555,6 +630,7 @@ Bun.serve({
                             transcript?: string;
                             text?: string;
                             audio_b64?: string;
+                            force_cloud?: boolean;
                             confirmed?: boolean;
                             approved?: boolean;
                             execute?: boolean;
@@ -568,6 +644,7 @@ Bun.serve({
                         payload = {
                             transcript: typedText,
                             audio_b64: typeof body.audio_b64 === "string" ? body.audio_b64 : "",
+                            force_cloud: Boolean(body.force_cloud),
                             profile,
                             target_apps: targets,
                             confirmed: Boolean(body.confirmed),

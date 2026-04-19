@@ -302,6 +302,20 @@ def _finalize_outputs(outputs: dict[str, str], transcript: str) -> dict[str, str
     return finalized
 
 
+def _replace_placeholder_recipients(outputs: dict[str, str], recipient: str) -> dict[str, str]:
+    if _looks_placeholder_recipient(recipient):
+        return outputs
+    normalized_recipient = str(recipient).strip()
+    if not normalized_recipient:
+        return outputs
+    replaced: dict[str, str] = {}
+    for app, value in outputs.items():
+        text = str(value or "")
+        text = re.sub(r"\b(Recipient|Name|Mode|Person|Contact)\b", normalized_recipient, text, flags=re.IGNORECASE)
+        replaced[app] = text
+    return replaced
+
+
 def _extract_intent(raw_response: str, transcript: str) -> str:
     text = str(raw_response or "").strip()
     if not text:
@@ -469,7 +483,7 @@ def _looks_placeholder_recipient(value: str) -> bool:
         return True
     return bool(
         re.fullmatch(
-            r"(name|recipient|person|contact|someone|team member|target|unknown|n/?a|tbd|my|me)",
+            r"(name|recipient|person|contact|someone|team member|target|unknown|n/?a|tbd|my|me|mode)",
             cleaned,
             flags=re.IGNORECASE,
         )
@@ -477,13 +491,14 @@ def _looks_placeholder_recipient(value: str) -> bool:
 
 
 def _infer_recipient(transcript: str, function_calls: list[dict[str, Any]], outputs: dict[str, str]) -> str:
+    disallowed = {"gmail", "email", "mail", "slack", "discord", "message", "messages", "imessage", "sms", "text"}
     for call in function_calls:
         if not isinstance(call, dict):
             continue
         args = call.get("arguments", {}) if isinstance(call.get("arguments"), dict) else {}
         for key in ("to", "channel"):
             value = str(args.get(key, "")).strip()
-            if value and not _looks_placeholder_recipient(value):
+            if value and value.lower() not in disallowed and not _looks_placeholder_recipient(value):
                 return value
 
     raw_transcript = str(transcript or "").strip()
@@ -493,6 +508,14 @@ def _infer_recipient(transcript: str, function_calls: list[dict[str, Any]], outp
     # Self-introductions are not recipient signals.
     if re.search(r"\bmy name(?:\s+is|['’]s)\b", lowered):
         lowered = lowered.replace("my name is", "").replace("my name's", "").replace("my name s", "")
+    role_match = re.search(
+        r"\b(?:email|message|text|notify|tell|send)\s+(?:the\s+)?(client|teammate|manager|founder|designer|engineer|alex|sarah)\b",
+        lowered,
+    )
+    if role_match:
+        candidate = role_match.group(1).title()
+        if candidate.lower() not in disallowed and not _looks_placeholder_recipient(candidate):
+            return candidate
     leading_name = re.match(r"^\s*([A-Z][a-z]+)\b", raw_transcript)
     if leading_name:
         candidate = leading_name.group(1).strip()
@@ -520,7 +543,7 @@ def _infer_recipient(transcript: str, function_calls: list[dict[str, Any]], outp
         greeting_match = re.search(r"\b(?:Hi|Hello|Hey)\s+([A-Z][A-Za-z]+)", str(app_value or ""))
         if greeting_match:
             candidate = greeting_match.group(1)
-            if not _looks_placeholder_recipient(candidate):
+            if candidate.lower() not in disallowed and not _looks_placeholder_recipient(candidate):
                 return candidate
     return "there"
 
@@ -741,7 +764,12 @@ def compose_payload(payload: dict[str, Any]) -> dict[str, Any]:
     }
     if transcript_text:
         try:
-            routing_result = router.route(transcript_text, profile, target_apps)
+            routing_result = router.route(
+                transcript_text,
+                profile,
+                target_apps,
+                force_cloud=bool(payload.get("force_cloud", False)),
+            )
         except Exception as exc:
             routing_result["routing_label"] = f"⚠️ Routing failed · {exc}"
             routing_result["response"] = transcript_text
@@ -799,6 +827,7 @@ def compose_payload(payload: dict[str, Any]) -> dict[str, Any]:
     _merge_action_outputs(outputs, action_results, function_calls)
     outputs = _synthesize_outputs_from_calls(outputs, function_calls, transcript_text, profile)
     outputs = _finalize_outputs(outputs, transcript_text)
+    outputs = _replace_placeholder_recipients(outputs, str(action_plan.get("recipient", "")))
     outputs = {
         app: _apply_corrections(_canonicalize_terms(value, profile, allow_fuzzy=False), profile)
         for app, value in outputs.items()

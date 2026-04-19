@@ -120,6 +120,45 @@ def new_passport(name: str = "Profile") -> VoicePassport:
     return VoicePassport(id=profile_id, name=name, created=ts, updated=ts)
 
 
+def _term_from_raw(item: Any) -> Term | None:
+    if isinstance(item, dict):
+        text = str(item.get("text", "")).strip()
+        if not text:
+            return None
+        return Term(
+            id=str(item.get("id") or f"term_{uuid.uuid4().hex[:8]}"),
+            text=text,
+            source=str(item.get("source") or "import"),
+            added=str(item.get("added") or now_iso()),
+        )
+    text = str(item or "").strip()
+    if not text:
+        return None
+    return Term(
+        id=f"term_{uuid.uuid4().hex[:8]}",
+        text=text,
+        source="import",
+        added=now_iso(),
+    )
+
+
+def _correction_from_raw(item: Any) -> Correction | None:
+    if not isinstance(item, dict):
+        return None
+    wrong = str(item.get("wrong", "")).strip()
+    right = str(item.get("right", "")).strip()
+    if not wrong or not right:
+        return None
+    return Correction(
+        id=str(item.get("id") or f"correction_{uuid.uuid4().hex[:8]}"),
+        wrong=wrong,
+        right=right,
+        confidence=float(item.get("confidence", 1.0) or 1.0),
+        uses=int(item.get("uses", 1) or 1),
+        last_applied=str(item.get("last_applied") or now_iso()),
+    )
+
+
 def load_passport(path: Path | None = None) -> VoicePassport:
     path = path or current_profile_path()
     if not path.exists():
@@ -128,6 +167,20 @@ def load_passport(path: Path | None = None) -> VoicePassport:
         return passport
 
     raw = json.loads(path.read_text())
+    raw_terms = raw.get("terms", [])
+    normalized_terms = []
+    for item in raw_terms if isinstance(raw_terms, list) else []:
+        parsed = _term_from_raw(item)
+        if parsed:
+            normalized_terms.append(parsed)
+
+    raw_corrections = raw.get("corrections", [])
+    normalized_corrections = []
+    for item in raw_corrections if isinstance(raw_corrections, list) else []:
+        parsed = _correction_from_raw(item)
+        if parsed:
+            normalized_corrections.append(parsed)
+
     return VoicePassport(
         version=raw.get("version", "2.0"),
         id=raw.get("id", path.stem.replace(".voicepassport", "")),
@@ -135,8 +188,8 @@ def load_passport(path: Path | None = None) -> VoicePassport:
         created=raw.get("created", now_iso()),
         updated=raw.get("updated", now_iso()),
         language=raw.get("language", "en"),
-        terms=[Term(**t) for t in raw.get("terms", [])],
-        corrections=[Correction(**c) for c in raw.get("corrections", [])],
+        terms=normalized_terms,
+        corrections=normalized_corrections,
         people=list(raw.get("people", [])),
         style_per_app={k: AppStyle(**v) for k, v in raw.get("style_per_app", {}).items()},
         writing_samples=list(raw.get("writing_samples", [])),

@@ -979,7 +979,7 @@ def _cloud_style_fallback(transcript: str, profile_context: dict, target_apps: l
     }
 
 
-def route(transcript: str, profile_context: dict, target_apps: list[str]) -> dict:
+def route(transcript: str, profile_context: dict, target_apps: list[str], force_cloud: bool = False) -> dict:
     """Route a transcript through local FunctionGemma or Gemini cloud."""
 
     safe_transcript = str(transcript or "").strip()
@@ -991,6 +991,12 @@ def route(transcript: str, profile_context: dict, target_apps: list[str]) -> dic
             "function_calls": [],
             "response": "",
         }
+
+    if force_cloud:
+        try:
+            return _call_gemini(safe_transcript, profile_context or {}, target_apps or [])
+        except Exception:
+            return _cloud_style_fallback(safe_transcript, profile_context or {}, target_apps or [])
 
     if _should_force_cloud(safe_transcript):
         try:
