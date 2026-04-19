@@ -1,0 +1,846 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Voice Right</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        :root {
+            --bg: #0a0d10;
+            --panel: rgba(255,255,255,0.05);
+            --panel-strong: rgba(255,255,255,0.08);
+            --line: rgba(255,255,255,0.1);
+            --text: #f5f7fb;
+            --muted: #a8b0be;
+            --soft: #657081;
+            --mint: #1fd19b;
+            --mint-dim: rgba(31,209,155,0.14);
+            --rose: #ff5f72;
+            --sky: #7cc7ff;
+        }
+        html, body {
+            background:
+                radial-gradient(circle at top, rgba(124,199,255,0.12), transparent 35%),
+                radial-gradient(circle at 20% 20%, rgba(31,209,155,0.1), transparent 28%),
+                var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+            font-family: "Plus Jakarta Sans", system-ui, sans-serif;
+            -webkit-font-smoothing: antialiased;
+        }
+        body { padding: 28px 16px 64px; }
+        .app { width: 100%; max-width: 1180px; margin: 0 auto; }
+        .hero {
+            display: grid;
+            grid-template-columns: 1.3fr 1fr;
+            gap: 18px;
+            margin-bottom: 18px;
+        }
+        .hero-card, .panel {
+            background: var(--panel);
+            border: 1px solid var(--line);
+            border-radius: 24px;
+            backdrop-filter: blur(16px);
+        }
+        .hero-card { padding: 28px; min-height: 220px; }
+        h1 { font-size: clamp(36px, 5vw, 58px); line-height: 0.94; letter-spacing: -0.04em; max-width: 760px; }
+        .hero-card p {
+            margin-top: 16px;
+            color: var(--muted);
+            max-width: 640px;
+            font-size: 17px;
+            line-height: 1.55;
+        }
+        .summary {
+            padding: 24px;
+            display: grid;
+            gap: 18px;
+        }
+        .eyebrow {
+            color: var(--mint);
+            font-size: 12px;
+            font-weight: 700;
+            letter-spacing: 0.16em;
+            text-transform: uppercase;
+        }
+        .stat-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+        }
+        .stat {
+            background: rgba(255,255,255,0.04);
+            border: 1px solid var(--line);
+            border-radius: 18px;
+            padding: 14px;
+        }
+        .stat strong {
+            display: block;
+            font-size: 26px;
+            font-weight: 800;
+            margin-bottom: 4px;
+        }
+        .stat span { color: var(--muted); font-size: 13px; }
+        .flow {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 12px;
+            margin-bottom: 18px;
+        }
+        .flow-step {
+            padding: 14px 16px;
+            border-radius: 18px;
+            background: rgba(255,255,255,0.04);
+            border: 1px solid var(--line);
+        }
+        .flow-step strong { display: block; font-size: 14px; margin-bottom: 4px; }
+        .flow-step span { color: var(--muted); font-size: 12px; line-height: 1.4; }
+        .grid {
+            display: grid;
+            grid-template-columns: minmax(320px, 360px) minmax(0, 1fr);
+            gap: 18px;
+            align-items: start;
+        }
+        .sidebar, .content {
+            display: grid;
+            gap: 18px;
+        }
+        .panel { padding: 22px; }
+        .panel h2 {
+            font-size: 24px;
+            letter-spacing: -0.03em;
+            margin-bottom: 8px;
+        }
+        .panel p.sub {
+            color: var(--muted);
+            font-size: 14px;
+            line-height: 1.5;
+            margin-bottom: 18px;
+        }
+        .label {
+            font-size: 12px;
+            font-weight: 700;
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
+            color: var(--soft);
+            margin-bottom: 8px;
+            display: block;
+        }
+        input[type="text"], textarea, select {
+            width: 100%;
+            background: rgba(255,255,255,0.04);
+            color: var(--text);
+            border: 1px solid var(--line);
+            border-radius: 16px;
+            padding: 14px 16px;
+            font: inherit;
+        }
+        textarea { min-height: 120px; resize: vertical; }
+        button {
+            border: none;
+            font: inherit;
+            cursor: pointer;
+            transition: transform 0.12s ease, filter 0.12s ease, background 0.12s ease;
+        }
+        button:hover { filter: brightness(1.04); }
+        button:active { transform: translateY(1px); }
+        .primary {
+            background: var(--mint);
+            color: #062a1f;
+            font-weight: 800;
+            padding: 13px 18px;
+            border-radius: 16px;
+        }
+        .secondary {
+            background: rgba(255,255,255,0.04);
+            color: var(--text);
+            border: 1px solid var(--line);
+            padding: 13px 18px;
+            border-radius: 16px;
+            font-weight: 600;
+        }
+        .stack { display: grid; gap: 12px; }
+        .row { display: flex; gap: 10px; align-items: center; }
+        .profile-pills, .chip-list, .target-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+        .pill, .chip, .target {
+            border-radius: 999px;
+            padding: 8px 12px;
+            font-size: 13px;
+            border: 1px solid var(--line);
+            background: rgba(255,255,255,0.04);
+        }
+        .chip {
+            max-width: 100%;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        .pill.active {
+            background: var(--mint-dim);
+            border-color: var(--mint);
+            color: var(--mint);
+        }
+        .target {
+            display: inline-flex;
+            gap: 8px;
+            align-items: center;
+            padding: 10px 12px;
+        }
+        .target input { accent-color: var(--mint); }
+        .import-drop {
+            min-height: 120px;
+            border: 1.5px dashed var(--line);
+            border-radius: 20px;
+            display: grid;
+            place-items: center;
+            text-align: center;
+            padding: 22px;
+            color: var(--muted);
+        }
+        .import-drop.dragover { border-color: var(--mint); background: var(--mint-dim); color: var(--text); }
+        .device-box {
+            background: rgba(255,255,255,0.03);
+            border: 1px solid var(--line);
+            border-radius: 18px;
+            padding: 18px;
+        }
+        .meter {
+            width: 100%;
+            height: 14px;
+            background: rgba(255,255,255,0.05);
+            border-radius: 999px;
+            overflow: hidden;
+            border: 1px solid var(--line);
+        }
+        .meter > div {
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(90deg, var(--mint), var(--sky));
+            transition: width 0.05s linear;
+        }
+        .compose-grid {
+            display: grid;
+            grid-template-columns: 1.1fr 0.9fr;
+            gap: 18px;
+        }
+        .mic-button {
+            width: 68px;
+            height: 68px;
+            border-radius: 50%;
+            background: var(--mint);
+            color: #062a1f;
+            font-size: 30px;
+            font-weight: 800;
+        }
+        .mic-button.recording {
+            background: var(--rose);
+            color: white;
+            box-shadow: 0 0 0 10px rgba(255,95,114,0.12);
+        }
+        .response-box {
+            min-height: 120px;
+            background: #090c12;
+            border: 1px solid var(--line);
+            border-radius: 18px;
+            padding: 16px;
+            line-height: 1.6;
+            font-size: 15px;
+            white-space: pre-wrap;
+        }
+        .output-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 14px;
+            margin-top: 16px;
+        }
+        .output-card {
+            background: rgba(255,255,255,0.04);
+            border: 1px solid var(--line);
+            border-radius: 20px;
+            padding: 18px;
+        }
+        .output-card h3 {
+            font-size: 14px;
+            text-transform: uppercase;
+            letter-spacing: 0.12em;
+            color: var(--soft);
+            margin-bottom: 10px;
+        }
+        .empty { color: var(--soft); font-style: italic; }
+        .memory-list {
+            display: grid;
+            gap: 10px;
+            max-height: 420px;
+            overflow: auto;
+            padding-right: 4px;
+        }
+        .chip-list {
+            max-height: 140px;
+            overflow: auto;
+            padding-right: 4px;
+            align-content: start;
+        }
+        .memory-item {
+            padding: 12px 14px;
+            border-radius: 16px;
+            background: rgba(255,255,255,0.04);
+            border: 1px solid var(--line);
+        }
+        .memory-item strong { display: block; font-size: 14px; margin-bottom: 4px; }
+        .memory-item span { color: var(--muted); font-size: 12px; }
+        @media (max-width: 980px) {
+            .hero, .grid, .compose-grid, .flow { grid-template-columns: 1fr; }
+            .output-grid { grid-template-columns: 1fr; }
+            .memory-list, .chip-list { max-height: none; }
+        }
+    </style>
+</head>
+<body>
+    <div class="app">
+        <section class="hero">
+            <div class="hero-card">
+                <div class="eyebrow">Portable Voice Identity</div>
+                <h1>One profile learns your words, your people, and how you write everywhere.</h1>
+                <p>
+                    Upload screenshots, emails, docs, or writing samples into a profile. Then speak once and generate
+                    multiple outputs that sound like you in the apps you selected.
+                </p>
+            </div>
+            <div class="summary">
+                <div>
+                    <div class="eyebrow">Active Profile</div>
+                    <h2 id="active-profile-title" style="font-size:32px; letter-spacing:-0.04em; margin-top:8px;">Profile</h2>
+                </div>
+                <div class="stat-grid">
+                    <div class="stat"><strong id="stat-terms">0</strong><span>terms</span></div>
+                    <div class="stat"><strong id="stat-people">0</strong><span>people</span></div>
+                    <div class="stat"><strong id="stat-sources">0</strong><span>sources</span></div>
+                    <div class="stat"><strong id="stat-corrections">0</strong><span>corrections</span></div>
+                </div>
+            </div>
+        </section>
+
+        <section class="flow">
+            <div class="flow-step"><strong>1. Profile</strong><span>Select whose memory and output style you are using.</span></div>
+            <div class="flow-step"><strong>2. Memory</strong><span>Import screenshots, docs, and writing samples into that profile.</span></div>
+            <div class="flow-step"><strong>3. Device Check</strong><span>Verify the chosen mic actually works before composing.</span></div>
+            <div class="flow-step"><strong>4. Compose</strong><span>Speak once, understand intent, then generate multiple app outputs.</span></div>
+        </section>
+
+        <div class="grid">
+            <aside class="sidebar">
+                <section class="panel">
+                    <h2>Profiles</h2>
+                    <p class="sub">All vocabulary, corrections, writing samples, and outputs are scoped to the active profile.</p>
+                    <div class="stack">
+                        <div class="profile-pills" id="profile-pills"></div>
+                        <div class="row">
+                            <input type="text" id="new-profile-name" placeholder="Create a profile">
+                            <button class="primary" id="create-profile-btn">Create</button>
+                        </div>
+                    </div>
+                </section>
+
+                <section class="panel">
+                    <h2>Profile Memory</h2>
+                    <p class="sub">Drag in screenshots, text, PDFs, docs, or writing samples. Gemma extracts terms, people, and reusable context into the active profile.</p>
+                    <div class="device-box" style="margin-bottom: 14px;">
+                        <div class="row" style="justify-content: space-between; align-items: center; margin-bottom: 10px; flex-wrap: wrap;">
+                            <div>
+                                <span class="label" style="margin-bottom: 4px;">Gmail</span>
+                                <div id="gmail-status" style="color: var(--muted); font-size: 14px;">Not connected.</div>
+                            </div>
+                            <div class="row" style="flex-wrap: wrap;">
+                                <button class="secondary" id="gmail-connect-btn">Connect Gmail</button>
+                                <button class="secondary" id="gmail-import-btn">Import sent mail</button>
+                                <button class="secondary" id="gmail-disconnect-btn">Disconnect</button>
+                            </div>
+                        </div>
+                        <div style="color: var(--soft); font-size: 12px;">Imports sent emails into the active profile so Voice Right can learn writing patterns and vocabulary.</div>
+                    </div>
+                    <div class="import-drop" id="import-drop">
+                        <div>
+                            <strong style="display:block; margin-bottom:6px;">Drop files here or click to upload</strong>
+                            <span>Images, txt, md, html, pdf, doc, docx</span>
+                        </div>
+                        <input type="file" id="import-file" hidden>
+                    </div>
+                    <div class="stack" style="margin-top: 12px;">
+                        <label class="label" for="manual-memory">Paste reference text</label>
+                        <textarea id="manual-memory" placeholder="Paste an email, message thread, notes, or other writing sample."></textarea>
+                        <button class="secondary" id="save-memory-text">Import pasted text</button>
+                    </div>
+                    <div class="chip-list" id="term-chips" style="margin-top: 14px;"></div>
+                    <div class="memory-list" id="memory-list" style="margin-top: 14px;"></div>
+                </section>
+            </aside>
+
+            <main class="content">
+                <section class="panel">
+                    <h2>Device Check</h2>
+                    <p class="sub">The first job is to verify the selected input device works. Watch the meter, switch devices if needed, and only then move to compose.</p>
+                    <div class="device-box">
+                        <label class="label" for="mic-device-select">Input Device</label>
+                        <select id="mic-device-select"></select>
+                        <div class="row" style="margin-top: 12px;">
+                            <button class="primary" id="device-enable-btn">Start device check</button>
+                            <button class="secondary" id="device-stop-btn">Stop</button>
+                            <span id="device-status" style="color: var(--muted); font-size: 14px;">Not started.</span>
+                        </div>
+                        <div class="meter" style="margin-top: 14px;"><div id="level-fill"></div></div>
+                    </div>
+                </section>
+                <section class="panel">
+                    <h2>Compose Once, Output Everywhere</h2>
+                    <p class="sub">Choose one or more output targets. Cactus handles transcript accuracy using profile memory, then Gemma infers the intent and writes each output in the right app voice.</p>
+                    <div class="compose-grid">
+                        <div class="stack">
+                            <label class="label">Select Outputs</label>
+                            <div class="target-list" id="target-list">
+                                <label class="target"><input type="checkbox" value="email" checked> Email</label>
+                                <label class="target"><input type="checkbox" value="message" checked> Message</label>
+                                <label class="target"><input type="checkbox" value="slack"> Slack</label>
+                                <label class="target"><input type="checkbox" value="discord"> Discord</label>
+                            </div>
+                            <label class="label" for="compose-text">Typed fallback</label>
+                            <textarea id="compose-text" placeholder="Or type what you want to say here. Example: Send an update to my reviewer that the document is signed."></textarea>
+                            <div class="row">
+                                <button class="mic-button" id="compose-mic">🎙</button>
+                                <button class="primary" id="compose-submit">Generate outputs</button>
+                                <span id="compose-status" style="color: var(--muted); font-size: 14px;">Ready.</span>
+                            </div>
+                        </div>
+
+                        <div class="stack">
+                            <div>
+                                <span class="label">Accurate Transcript</span>
+                                <div class="response-box" id="transcript-box"><span class="empty">Your corrected transcript will appear here.</span></div>
+                            </div>
+                            <div>
+                                <span class="label">Intent</span>
+                                <div class="response-box" id="intent-box"><span class="empty">Voice Right will summarize what you are trying to communicate.</span></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="output-grid" id="output-grid">
+                        <div class="output-card">
+                            <h3>Email</h3>
+                            <div class="response-box" id="output-email"><span class="empty">Select Email and generate outputs.</span></div>
+                        </div>
+                        <div class="output-card">
+                            <h3>Message</h3>
+                            <div class="response-box" id="output-message"><span class="empty">Select Message and generate outputs.</span></div>
+                        </div>
+                        <div class="output-card">
+                            <h3>Slack</h3>
+                            <div class="response-box" id="output-slack"><span class="empty">Select Slack and generate outputs.</span></div>
+                        </div>
+                        <div class="output-card">
+                            <h3>Discord</h3>
+                            <div class="response-box" id="output-discord"><span class="empty">Select Discord and generate outputs.</span></div>
+                        </div>
+                    </div>
+                </section>
+            </main>
+        </div>
+    </div>
+
+    <script>
+        let activeProfile = "default";
+        let profile = null;
+        let composeRecording = false;
+        let composeRecorder = null;
+        let gmailState = { connected: false, configured: false, email: "" };
+        const micState = { stream: null, audioCtx: null, analyser: null, rafId: null, selectedDeviceId: "" };
+
+        function qs(id) { return document.getElementById(id); }
+        function escapeHtml(value) {
+            return String(value).replace(/[&<>"']/g, (c) => ({ "&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;" }[c]));
+        }
+        function sanitizeDisplayTerm(value) {
+            const cleaned = String(value || '')
+                .replace(/\\r|\\n|\r|\n/g, ' ')
+                .replace(/\s+/g, ' ')
+                .trim();
+            if (!cleaned) return '';
+            if (cleaned.length > 56) return '';
+            if (/^https?:\/\//i.test(cleaned)) return '';
+            if (cleaned.includes('unsubscribe')) return '';
+            if (cleaned.includes('@') && cleaned.length > 28) return '';
+            if (/^[^a-zA-Z0-9]*$/.test(cleaned)) return '';
+            return cleaned;
+        }
+        function prettySourceName(source) {
+            const name = String(source?.name || 'Imported memory')
+                .replace(/^gmail-sent-mail$/i, 'Gmail sent mail')
+                .replace(/\.(png|jpg|jpeg|pdf|txt|md|html|doc|docx)$/i, '')
+                .replace(/[-_]+/g, ' ')
+                .trim();
+            return name ? name.replace(/\b\w/g, (c) => c.toUpperCase()) : 'Imported memory';
+        }
+
+        async function fetchJson(url, options) {
+            const res = await fetch(url, options);
+            return await res.json();
+        }
+
+        function selectedTargets() {
+            return Array.from(document.querySelectorAll('#target-list input:checked')).map((input) => input.value);
+        }
+
+        async function refreshProfiles() {
+            const profiles = await fetchJson('/api/profiles');
+            const wrap = qs('profile-pills');
+            wrap.innerHTML = '';
+            profiles.forEach((item) => {
+                const button = document.createElement('button');
+                button.className = `pill ${item.id === activeProfile ? 'active' : ''}`;
+                button.textContent = `${item.name} · ${item.terms} terms`;
+                button.onclick = async () => {
+                    activeProfile = item.id;
+                    await refreshProfile();
+                    await refreshProfiles();
+                };
+                wrap.appendChild(button);
+            });
+        }
+
+        async function refreshProfile() {
+            profile = await fetchJson(`/api/profile?id=${encodeURIComponent(activeProfile)}`);
+            qs('active-profile-title').textContent = profile.name;
+            qs('stat-terms').textContent = profile.terms.length;
+            qs('stat-people').textContent = (profile.people || []).length;
+            qs('stat-sources').textContent = (profile.reference_sources || []).length;
+            qs('stat-corrections').textContent = profile.corrections.length;
+            renderTerms();
+            renderSources();
+            await refreshGmailStatus();
+        }
+
+        function renderTerms() {
+            const wrap = qs('term-chips');
+            wrap.innerHTML = '';
+            const items = [];
+            const seen = new Set();
+            for (const term of (profile?.terms || []).slice().reverse()) {
+                const text = sanitizeDisplayTerm(term.text);
+                const key = text.toLowerCase();
+                if (!text || seen.has(key)) continue;
+                seen.add(key);
+                items.push(text);
+                if (items.length >= 14) break;
+            }
+            if (!items.length) {
+                wrap.innerHTML = '<span class="empty">No vocabulary yet. Import a screenshot or document.</span>';
+                return;
+            }
+            items.forEach((term) => {
+                const el = document.createElement('span');
+                el.className = 'chip';
+                el.textContent = term;
+                el.title = term;
+                wrap.appendChild(el);
+            });
+        }
+
+        function renderSources() {
+            const wrap = qs('memory-list');
+            wrap.innerHTML = '';
+            const sources = (profile?.reference_sources || []).slice().reverse().slice(0, 6);
+            if (!sources.length) {
+                wrap.innerHTML = '<div class="empty">No imported memory yet.</div>';
+                return;
+            }
+            sources.forEach((source) => {
+                const el = document.createElement('div');
+                el.className = 'memory-item';
+                el.innerHTML = `<strong>${escapeHtml(prettySourceName(source))}</strong><span>${escapeHtml(source.type)} · ${source.terms_added} terms added</span>`;
+                wrap.appendChild(el);
+            });
+        }
+
+        async function createProfile() {
+            const name = qs('new-profile-name').value.trim();
+            if (!name) return;
+            const created = await fetchJson('/api/profiles', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ name }),
+            });
+            activeProfile = created.id;
+            qs('new-profile-name').value = '';
+            await refreshProfiles();
+            await refreshProfile();
+        }
+
+        async function importFile(file) {
+            const form = new FormData();
+            form.append('profile', activeProfile);
+            form.append('file', file);
+            const res = await fetchJson('/api/import-memory', { method: 'POST', body: form });
+            if (res.error) {
+                alert(res.error);
+                return;
+            }
+            await refreshProfile();
+        }
+
+        async function importTextMemory() {
+            const text = qs('manual-memory').value.trim();
+            if (!text) return;
+            const blob = new File([text], `pasted-memory-${Date.now()}.txt`, { type: 'text/plain' });
+            await importFile(blob);
+            qs('manual-memory').value = '';
+        }
+
+        async function refreshGmailStatus() {
+            const status = qs('gmail-status');
+            const data = await fetchJson(`/api/gmail/status?profile=${encodeURIComponent(activeProfile)}`);
+            gmailState = data;
+            if (!data.configured) {
+                status.textContent = 'Google OAuth is not configured on the server.';
+                return;
+            }
+            if (data.connected) {
+                status.textContent = data.email ? `Connected as ${data.email}` : 'Connected.';
+            } else {
+                status.textContent = 'Not connected.';
+            }
+        }
+
+        function handleOAuthBanner() {
+            const url = new URL(window.location.href);
+            const gmail = url.searchParams.get('gmail');
+            const profileId = url.searchParams.get('profile');
+            if (profileId) activeProfile = profileId;
+            if (gmail) {
+                qs('compose-status').textContent = gmail === 'connected' ? 'Gmail connected.' : `Gmail status: ${gmail}`;
+                url.searchParams.delete('gmail');
+                url.searchParams.delete('profile');
+                history.replaceState({}, '', url.pathname + (url.search ? `?${url.searchParams.toString()}` : ''));
+            }
+        }
+
+        async function populateDeviceList() {
+            await navigator.mediaDevices.getUserMedia({ audio: true }).then((stream) => stream.getTracks().forEach((t) => t.stop()));
+            const devices = await navigator.mediaDevices.enumerateDevices();
+            const mics = devices.filter((device) => device.kind === 'audioinput');
+            const select = qs('mic-device-select');
+            select.innerHTML = '';
+            mics.forEach((mic) => {
+                const option = document.createElement('option');
+                option.value = mic.deviceId;
+                option.textContent = mic.label || `Microphone ${mic.deviceId.slice(0, 8)}`;
+                select.appendChild(option);
+            });
+            if (mics[0]) {
+                micState.selectedDeviceId = mics[0].deviceId;
+                select.value = micState.selectedDeviceId;
+            }
+        }
+
+        async function startDeviceCheck(deviceId) {
+            await stopDeviceCheck();
+            micState.stream = await navigator.mediaDevices.getUserMedia({ audio: deviceId ? { deviceId: { exact: deviceId } } : true });
+            micState.audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            micState.analyser = micState.audioCtx.createAnalyser();
+            micState.analyser.fftSize = 256;
+            micState.audioCtx.createMediaStreamSource(micState.stream).connect(micState.analyser);
+            const data = new Uint8Array(micState.analyser.frequencyBinCount);
+
+            function tick() {
+                micState.analyser.getByteFrequencyData(data);
+                const avg = data.reduce((sum, value) => sum + value, 0) / data.length;
+                qs('level-fill').style.width = `${Math.min(100, avg * 0.82)}%`;
+                qs('device-status').textContent = avg > 10 ? 'Mic signal detected.' : 'Listening for input...';
+                micState.rafId = requestAnimationFrame(tick);
+            }
+
+            tick();
+            window.__voiceRightMicDeviceId = deviceId;
+        }
+
+        async function stopDeviceCheck() {
+            if (micState.rafId) cancelAnimationFrame(micState.rafId);
+            micState.rafId = null;
+            if (micState.stream) micState.stream.getTracks().forEach((track) => track.stop());
+            micState.stream = null;
+            if (micState.audioCtx && micState.audioCtx.state !== 'closed') await micState.audioCtx.close();
+            micState.audioCtx = null;
+            micState.analyser = null;
+            qs('level-fill').style.width = '0%';
+        }
+
+        async function startWavRecording(deviceId) {
+            const stream = await navigator.mediaDevices.getUserMedia({ audio: deviceId ? { deviceId: { exact: deviceId } } : true });
+            const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            const source = audioCtx.createMediaStreamSource(stream);
+            const processor = audioCtx.createScriptProcessor(4096, 1, 1);
+            const chunks = [];
+
+            source.connect(processor);
+            processor.connect(audioCtx.destination);
+
+            processor.onaudioprocess = (event) => {
+                chunks.push(new Float32Array(event.inputBuffer.getChannelData(0)));
+            };
+
+            return {
+                async stop() {
+                    processor.disconnect();
+                    source.disconnect();
+                    stream.getTracks().forEach((track) => track.stop());
+                    await audioCtx.close();
+                    let length = 0;
+                    chunks.forEach((chunk) => length += chunk.length);
+                    const merged = new Float32Array(length);
+                    let offset = 0;
+                    chunks.forEach((chunk) => {
+                        merged.set(chunk, offset);
+                        offset += chunk.length;
+                    });
+                    return encodeWav(merged, audioCtx.sampleRate);
+                }
+            };
+        }
+
+        function encodeWav(samples, sampleRate) {
+            const buffer = new ArrayBuffer(44 + samples.length * 2);
+            const view = new DataView(buffer);
+            writeString(view, 0, 'RIFF');
+            view.setUint32(4, 36 + samples.length * 2, true);
+            writeString(view, 8, 'WAVE');
+            writeString(view, 12, 'fmt ');
+            view.setUint32(16, 16, true);
+            view.setUint16(20, 1, true);
+            view.setUint16(22, 1, true);
+            view.setUint32(24, sampleRate, true);
+            view.setUint32(28, sampleRate * 2, true);
+            view.setUint16(32, 2, true);
+            view.setUint16(34, 16, true);
+            writeString(view, 36, 'data');
+            view.setUint32(40, samples.length * 2, true);
+            let offset = 44;
+            for (let i = 0; i < samples.length; i++, offset += 2) {
+                const s = Math.max(-1, Math.min(1, samples[i]));
+                view.setInt16(offset, s < 0 ? s * 0x8000 : s * 0x7fff, true);
+            }
+            return new File([view], `voice-right-${Date.now()}.wav`, { type: 'audio/wav' });
+        }
+
+        function writeString(view, offset, string) {
+            for (let i = 0; i < string.length; i++) view.setUint8(offset + i, string.charCodeAt(i));
+        }
+
+        async function composeFromInput(file = null) {
+            const status = qs('compose-status');
+            status.textContent = 'Generating outputs...';
+            const form = new FormData();
+            form.append('profile', activeProfile);
+            form.append('targets', selectedTargets().join(','));
+            form.append('text', qs('compose-text').value.trim());
+            if (file) form.append('file', file, file.name);
+            const result = await fetchJson('/api/compose', { method: 'POST', body: form });
+            if (result.error) {
+                status.textContent = result.error;
+                return;
+            }
+            qs('transcript-box').textContent = result.transcript || '';
+            qs('intent-box').textContent = result.intent || '';
+            ['email', 'message', 'slack', 'discord'].forEach((target) => {
+                const box = qs(`output-${target}`);
+                box.textContent = result.outputs?.[target] || 'Not selected.';
+            });
+            status.textContent = 'Done.';
+        }
+
+        async function toggleComposeRecording() {
+            const button = qs('compose-mic');
+            if (!composeRecording) {
+                composeRecorder = await startWavRecording(window.__voiceRightMicDeviceId || micState.selectedDeviceId);
+                composeRecording = true;
+                button.classList.add('recording');
+                qs('compose-status').textContent = 'Recording... click again to stop.';
+                return;
+            }
+
+            composeRecording = false;
+            button.classList.remove('recording');
+            const file = await composeRecorder.stop();
+            await composeFromInput(file);
+        }
+
+        const importDrop = qs('import-drop');
+        importDrop.addEventListener('click', () => qs('import-file').click());
+        importDrop.addEventListener('dragover', (event) => {
+            event.preventDefault();
+            importDrop.classList.add('dragover');
+        });
+        importDrop.addEventListener('dragleave', () => importDrop.classList.remove('dragover'));
+        importDrop.addEventListener('drop', async (event) => {
+            event.preventDefault();
+            importDrop.classList.remove('dragover');
+            if (event.dataTransfer.files[0]) await importFile(event.dataTransfer.files[0]);
+        });
+        qs('import-file').addEventListener('change', async (event) => {
+            if (event.target.files[0]) await importFile(event.target.files[0]);
+            event.target.value = '';
+        });
+
+        qs('create-profile-btn').onclick = createProfile;
+        qs('save-memory-text').onclick = importTextMemory;
+        qs('gmail-connect-btn').onclick = () => {
+            window.location.href = `/api/gmail/connect?profile=${encodeURIComponent(activeProfile)}`;
+        };
+        qs('gmail-import-btn').onclick = async () => {
+            qs('gmail-status').textContent = 'Importing sent mail...';
+            const result = await fetchJson('/api/gmail/import', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ profile: activeProfile, maxResults: 15 }),
+            });
+            if (result.error) {
+                qs('gmail-status').textContent = result.error;
+                return;
+            }
+            qs('gmail-status').textContent = 'Imported sent mail.';
+            await refreshProfile();
+        };
+        qs('gmail-disconnect-btn').onclick = async () => {
+            await fetchJson('/api/gmail/disconnect', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ profile: activeProfile }),
+            });
+            await refreshGmailStatus();
+        };
+        qs('device-enable-btn').onclick = async () => {
+            try {
+                await populateDeviceList();
+                await startDeviceCheck(qs('mic-device-select').value || micState.selectedDeviceId);
+            } catch (err) {
+                qs('device-status').textContent = `Mic error: ${err.message}`;
+            }
+        };
+        qs('device-stop-btn').onclick = () => stopDeviceCheck();
+        qs('mic-device-select').addEventListener('change', async (event) => {
+            micState.selectedDeviceId = event.target.value;
+            if (micState.stream) await startDeviceCheck(micState.selectedDeviceId);
+        });
+        qs('compose-submit').onclick = () => composeFromInput();
+        qs('compose-mic').onclick = toggleComposeRecording;
+
+        handleOAuthBanner();
+        Promise.all([refreshProfiles(), refreshProfile()]).catch(console.error);
+    </script>
+</body>
+</html>

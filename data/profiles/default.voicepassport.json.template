@@ -1,0 +1,21 @@
+{
+  "version": "2.0",
+  "id": "default",
+  "name": "Profile",
+  "created": "REPLACE_WITH_ISO_TIMESTAMP",
+  "updated": "REPLACE_WITH_ISO_TIMESTAMP",
+  "language": "en",
+  "terms": [],
+  "corrections": [],
+  "people": [],
+  "style_per_app": {},
+  "writing_samples": [],
+  "reference_sources": [],
+  "linked_accounts": [],
+  "history": [],
+  "calibration": {
+    "last_run_id": null,
+    "accuracy_before": null,
+    "accuracy_after": null
+  }
+}
