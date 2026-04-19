@@ -281,7 +281,7 @@ def _synthesize_outputs_from_calls(
                 synthesized["email"] = _render_email_from_args(args, profile)
         elif name == "send_message":
             current = str(synthesized.get("message", "")).strip()
-            if _looks_like_transcript_echo(current, transcript):
+            if _looks_like_transcript_echo(current, transcript) or re.search(r"^(Hey|Hi)\s+(My|Name|Recipient)\b", current, flags=re.IGNORECASE):
                 synthesized["message"] = _render_message_from_args(args, transcript)
         elif name == "post_slack":
             current = str(synthesized.get("slack", "")).strip()
@@ -294,7 +294,11 @@ def _finalize_outputs(outputs: dict[str, str], transcript: str) -> dict[str, str
     finalized: dict[str, str] = {}
     for app, value in outputs.items():
         text = str(value or "").strip() or transcript
-        finalized[app] = _polish_output(app, text)
+        polished = _polish_output(app, text)
+        if app == "email":
+            subject, body = _extract_subject_and_body(polished, transcript)
+            polished = f"Subject: {subject}\n\n{body}"
+        finalized[app] = polished
     return finalized
 
 
@@ -439,6 +443,8 @@ def _extract_subject_and_body(email_text: str, transcript: str) -> tuple[str, st
     subject_match = re.search(r"^Subject:\s*(.+)$", text, flags=re.IGNORECASE | re.MULTILINE)
     if subject_match:
         subject = subject_match.group(1).strip() or subject
+    if re.fullmatch(r"(hi|hello|hey|name|recipient)[,!\s]*", subject, flags=re.IGNORECASE):
+        subject = "Quick update"
 
     lines = [line.strip() for line in text.splitlines() if line.strip()]
     body_lines: list[str] = []
@@ -452,7 +458,22 @@ def _extract_subject_and_body(email_text: str, transcript: str) -> tuple[str, st
             break
         body_lines.append(line)
     body = "\n".join(body_lines).strip() or str(transcript or "").strip() or "Quick update"
+    if re.fullmatch(r"(hi|hello|hey|name|recipient)[,!\s]*", body, flags=re.IGNORECASE):
+        body = str(transcript or "").strip() or "Quick update"
     return (subject, body)
+
+
+def _looks_placeholder_recipient(value: str) -> bool:
+    cleaned = str(value or "").strip()
+    if not cleaned:
+        return True
+    return bool(
+        re.fullmatch(
+            r"(name|recipient|person|contact|someone|team member|target|unknown|n/?a|tbd|my|me)",
+            cleaned,
+            flags=re.IGNORECASE,
+        )
+    )
 
 
 def _infer_recipient(transcript: str, function_calls: list[dict[str, Any]], outputs: dict[str, str]) -> str:
@@ -462,34 +483,46 @@ def _infer_recipient(transcript: str, function_calls: list[dict[str, Any]], outp
         args = call.get("arguments", {}) if isinstance(call.get("arguments"), dict) else {}
         for key in ("to", "channel"):
             value = str(args.get(key, "")).strip()
-            if value:
+            if value and not _looks_placeholder_recipient(value):
                 return value
 
     raw_transcript = str(transcript or "").strip()
     lowered = raw_transcript.lower()
     if "team" in lowered:
         return "Team"
+    # Self-introductions are not recipient signals.
+    if re.search(r"\bmy name(?:\s+is|['’]s)\b", lowered):
+        lowered = lowered.replace("my name is", "").replace("my name's", "").replace("my name s", "")
     leading_name = re.match(r"^\s*([A-Z][a-z]+)\b", raw_transcript)
     if leading_name:
         candidate = leading_name.group(1).strip()
         blocked = {"Hi", "Hey", "Hello", "Email", "Message", "Text", "Send", "Tell", "Notify", "Update"}
         if candidate not in blocked:
-            return candidate
+            if not _looks_placeholder_recipient(candidate):
+                return candidate
     reviewer_match = re.search(r"\bmy\s+([a-z]+)\b", lowered)
     if reviewer_match:
-        return reviewer_match.group(1).title()
+        candidate = reviewer_match.group(1).title()
+        if not _looks_placeholder_recipient(candidate):
+            return candidate
     direct_match = re.search(r"\b(?:tell|email|message|text|notify)\s+([A-Z][a-z]+|[a-z]+)", raw_transcript)
     if direct_match:
-        return direct_match.group(1).title()
+        candidate = direct_match.group(1).title()
+        if candidate.lower() not in {"my", "me", "the", "a", "an", "sent", "send", "gmail", "email", "message"} and not _looks_placeholder_recipient(candidate):
+            return candidate
     to_match = re.search(r"\bto\s+([A-Z][a-z]+|team)\b", raw_transcript)
     if to_match:
-        return to_match.group(1).title()
+        candidate = to_match.group(1).title()
+        if candidate.lower() not in {"sent", "send", "gmail", "email", "message"} and not _looks_placeholder_recipient(candidate):
+            return candidate
 
     for app_value in outputs.values():
         greeting_match = re.search(r"\b(?:Hi|Hello|Hey)\s+([A-Z][A-Za-z]+)", str(app_value or ""))
         if greeting_match:
-            return greeting_match.group(1)
-    return "Recipient"
+            candidate = greeting_match.group(1)
+            if not _looks_placeholder_recipient(candidate):
+                return candidate
+    return "there"
 
 
 def _default_function_calls(
