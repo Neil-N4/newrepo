@@ -348,6 +348,41 @@ def extract_people(content: str) -> list[str]:
     return unique_preserve(filtered[:20])
 
 
+def _learn_style_from_text(passport: VoicePassport, content: str, source_type: str) -> None:
+    text = str(content or "").strip()
+    if not text:
+        return
+
+    lowered = text.lower()
+    has_emoji = bool(re.search(r"[\U0001F300-\U0001FAFF]", text))
+    app_key = ""
+    if source_type in {"gmail", "email", "eml"}:
+        app_key = "email"
+    elif source_type in {"message", "sms", "imessage"}:
+        app_key = "message"
+
+    if app_key:
+        inferred_tone = "professional" if any(marker in lowered for marker in ("let me know", "thank you", "best,", "regards", "sincerely")) else "casual"
+        if has_emoji and app_key == "message":
+            inferred_tone = "casual"
+        existing = passport.style_per_app.get(app_key)
+        passport.style_per_app[app_key] = AppStyle(
+            tone=inferred_tone,
+            sample_size=(existing.sample_size if existing else 0) + 1,
+            last_learned=now_iso(),
+        )
+
+    signoff_match = re.search(
+        r"\n(?:best|thanks|regards|sincerely)[,\s]*\n+([A-Z][A-Za-z]+(?:\s+[A-Z][A-Za-z]+)?)",
+        text,
+        flags=re.IGNORECASE,
+    )
+    if signoff_match and passport.name.lower() in {"default", "profile", "sender"}:
+        signer = signoff_match.group(1).strip()
+        if signer:
+            passport.name = signer
+
+
 def import_reference_content(
     *,
     passport: VoicePassport,
@@ -372,6 +407,7 @@ def import_reference_content(
                     "added": now_iso(),
                 }
             )
+            _learn_style_from_text(passport, content, source_type)
 
     added_terms = add_terms(passport, terms, "import")
     people = extract_people(content if content else " ".join(terms))
@@ -508,18 +544,28 @@ def capture_correction(original: str, edited: str, passport: VoicePassport) -> l
 
     new_items: list[Correction] = []
     now = now_iso()
-    for tag, i1, i2, j1, j2 in difflib.SequenceMatcher(a=original.split(), b=edited.split()).get_opcodes():
-        if tag != "replace":
-            continue
-        wrong = " ".join(original.split()[i1:i2]).strip()
-        right = " ".join(edited.split()[j1:j2]).strip()
-        if not wrong or not right or wrong.lower() == right.lower():
-            continue
+    original_words = original.split()
+    edited_words = edited.split()
+
+    def is_safe_pair(wrong: str, right: str) -> bool:
+        if not wrong or not right:
+            return False
+        if wrong.lower() == right.lower():
+            return False
+        if len(wrong) > 80 or len(right) > 80:
+            return False
+        if len(wrong.split()) > 8 or len(right.split()) > 8:
+            return False
+        return True
+
+    def upsert_pair(wrong: str, right: str) -> Correction | None:
+        if not is_safe_pair(wrong, right):
+            return None
         existing = next((item for item in passport.corrections if item.wrong == wrong and item.right == right), None)
         if existing:
             existing.uses += 1
             existing.last_applied = now
-            continue
+            return existing
         item = Correction(
             id=f"correction_{uuid.uuid4().hex[:8]}",
             wrong=wrong,
@@ -529,7 +575,28 @@ def capture_correction(original: str, edited: str, passport: VoicePassport) -> l
             last_applied=now,
         )
         passport.corrections.append(item)
-        new_items.append(item)
+        return item
+
+    full_wrong = original.strip()
+    full_right = edited.strip()
+    if is_safe_pair(full_wrong, full_right) and " " in full_wrong and " " in full_right:
+        item = upsert_pair(full_wrong, full_right)
+        if item:
+            new_items.append(item)
+            return new_items
+
+    for tag, i1, i2, j1, j2 in difflib.SequenceMatcher(a=original.split(), b=edited.split()).get_opcodes():
+        if tag not in {"replace", "insert", "delete"}:
+            continue
+        wrong = " ".join(original_words[i1:i2]).strip()
+        right = " ".join(edited_words[j1:j2]).strip()
+        item = upsert_pair(wrong, right)
+        if item:
+            new_items.append(item)
+    if not new_items and is_safe_pair(original.strip(), edited.strip()):
+        item = upsert_pair(original.strip(), edited.strip())
+        if item:
+            new_items.append(item)
     return new_items
 
 

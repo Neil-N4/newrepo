@@ -9,7 +9,8 @@ const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID || "";
 const GOOGLE_CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET || "";
 const GOOGLE_REDIRECT_URI = process.env.GOOGLE_REDIRECT_URI || `http://localhost:${PORT}/oauth/google/callback`;
 const GOOGLE_SCOPES = [
-    "https://www.googleapis.com/auth/gmail.readonly",
+    "https://www.googleapis.com/auth/gmail.compose",
+    "https://www.googleapis.com/auth/gmail.send",
     "openid",
     "email",
     "profile",
@@ -76,6 +77,26 @@ async function runStt(args: string[], profile?: string) {
     let cmd = $`${PYTHON_BIN} stt.py ${args}`;
     if (profile) cmd = cmd.env({ VOICE_RIGHT_PROFILE_PATH: profile });
     return await cmd.quiet().text();
+}
+
+async function runComposePayload(payload: unknown) {
+    const tmpPath = `/tmp/voice-right-compose-payload-${Date.now()}-${Math.random().toString(36).slice(2)}.json`;
+    await Bun.write(tmpPath, JSON.stringify(payload, null, 2));
+    try {
+        return await $`${PYTHON_BIN} compose_route.py ${tmpPath}`.quiet().text();
+    } finally {
+        await Bun.$`rm -f ${tmpPath}`.quiet();
+    }
+}
+
+async function runActionPayload(payload: unknown) {
+    const tmpPath = `/tmp/voice-right-action-payload-${Date.now()}-${Math.random().toString(36).slice(2)}.json`;
+    await Bun.write(tmpPath, JSON.stringify(payload, null, 2));
+    try {
+        return await $`${PYTHON_BIN} actions.py ${tmpPath}`.quiet().text();
+    } finally {
+        await Bun.$`rm -f ${tmpPath}`.quiet();
+    }
 }
 
 async function loadProfile(id = "default") {
@@ -289,7 +310,12 @@ await ensureDefaultProfile();
 Bun.serve({
     port: PORT,
     routes: {
-        "/": async () => new Response(Bun.file("index.html")),
+        "/": async () =>
+            new Response(Bun.file("index.html"), {
+                headers: {
+                    "Cache-Control": "no-store, no-cache, must-revalidate",
+                },
+            }),
 
         "/qr": async (req) => {
             const host = req.headers.get("host") || `localhost:${PORT}`;
@@ -494,35 +520,148 @@ Bun.serve({
         "/api/compose": {
             async POST(req) {
                 try {
-                    const form = await req.formData();
-                    const id = String(form.get("profile") || "default");
-                    const profile = profilePath(id);
-                    const targets = normaliseTargets(form.get("targets"));
-                    const typedText = String(form.get("text") || "").trim();
-                    const file = form.get("file") as File | null;
-                    let transcript = typedText;
-                    let stt = null;
+                    const contentType = req.headers.get("content-type") || "";
+                    let id = "default";
+                    let profile: any = null;
+                    let targets: string[] = [];
+                    let typedText = "";
+                    let payload: Record<string, unknown> = {};
 
-                    if (file && typeof file !== "string" && file.size) {
-                        const tmpPath = `/tmp/voice-right-compose-${Date.now()}.wav`;
-                        await Bun.write(tmpPath, file);
-                        const rawStt = await runStt(["transcribe", tmpPath], profile);
-                        stt = parseLastJson(rawStt) || {};
-                        transcript = stt.final || stt.whisper_pass2 || stt.whisper_pass1 || stt.parakeet || transcript;
+                    if (contentType.includes("application/json")) {
+                        const body = (await req.json().catch(() => ({}))) as {
+                            profile?: string | { id?: string };
+                            target_apps?: string[];
+                            targets?: string[] | string;
+                            transcript?: string;
+                            text?: string;
+                            audio_b64?: string;
+                            confirmed?: boolean;
+                        };
+                        id = typeof body.profile === "string" ? body.profile : String(body.profile?.id || "default");
+                        profile = await loadProfile(id);
+                        targets = Array.isArray(body.target_apps)
+                            ? normaliseTargets(body.target_apps.join(","))
+                            : normaliseTargets(body.targets ?? "");
+                        typedText = String(body.transcript || body.text || "").trim();
+                        payload = {
+                            transcript: typedText,
+                            audio_b64: typeof body.audio_b64 === "string" ? body.audio_b64 : "",
+                            profile,
+                            target_apps: targets,
+                            confirmed: Boolean(body.confirmed),
+                        };
+                    } else {
+                        const form = await req.formData();
+                        id = String(form.get("profile") || "default");
+                        profile = await loadProfile(id);
+                        targets = normaliseTargets(form.get("targets"));
+                        typedText = String(form.get("text") || "").trim();
+                        const file = form.get("file") as File | null;
+                        payload = {
+                            transcript: typedText,
+                            profile,
+                            target_apps: targets,
+                            confirmed: false,
+                        };
+
+                        if (file && typeof file !== "string" && file.size) {
+                            const suffix = (file.name.split(".").pop() || "wav").toLowerCase();
+                            const tmpPath = `/tmp/voice-right-compose-${Date.now()}.${suffix}`;
+                            await Bun.write(tmpPath, file);
+                            payload.file_path = tmpPath;
+                        }
                     }
 
-                    if (!transcript) {
+                    if (!typedText && !payload.file_path && !payload.audio_b64) {
                         return Response.json({ error: "audio or text required" }, { status: 400 });
                     }
 
-                    const rawCompose = await runBrain(["compose", transcript, targets.join(",") || "email"], profile);
-                    const composed = parseLastJson(rawCompose) || {};
+                    try {
+                        const rawCompose = await runComposePayload(payload);
+                        const composed = parseLastJson(rawCompose) || {};
+                        return Response.json({
+                            transcript: composed.transcript || typedText,
+                            stt: composed.stt || null,
+                            routing: composed.routing || null,
+                            action_plan: composed.action_plan || null,
+                            execution_result: composed.execution_result || null,
+                            actions: composed.actions || [],
+                            function_calls: composed.function_calls || [],
+                            intent: composed.intent || composed.transcript || typedText,
+                            outputs: composed.outputs || {},
+                            error: composed.error || null,
+                        });
+                    } finally {
+                        if (payload.file_path) {
+                            await Bun.$`rm -f ${String(payload.file_path)}`.quiet();
+                        }
+                    }
+                } catch (err) {
+                    return Response.json({ error: String(err) }, { status: 500 });
+                }
+            },
+        },
+
+        "/api/execute-action": {
+            async POST(req) {
+                try {
+                    const body = (await req.json().catch(() => ({}))) as {
+                        profile?: string;
+                        function_calls?: Array<{ name?: string; arguments?: Record<string, unknown> }>;
+                    };
+                    const id = String(body.profile || "default");
+                    const profile = await loadProfile(id);
+                    const calls = Array.isArray(body.function_calls) ? body.function_calls : [];
+                    const results = [];
+                    for (const call of calls) {
+                        if (!call || typeof call !== "object") continue;
+                        const args = typeof call.arguments === "object" && call.arguments ? { ...call.arguments, send_now: true } : { send_now: true };
+                        const raw = await runActionPayload({
+                            function_name: String(call.name || ""),
+                            args,
+                            profile,
+                        });
+                        results.push(parseLastJson(raw) || { status: "error", action: String(call.name || ""), detail: "Action execution failed" });
+                    }
+                    const successful = results.filter((item: any) => String(item?.status || "").toLowerCase() === "success");
                     return Response.json({
-                        transcript,
-                        stt,
-                        intent: composed.intent || transcript,
-                        outputs: composed.outputs || {},
+                        ok: true,
+                        actions: results,
+                        execution_result: successful.length
+                            ? {
+                                status: "executed",
+                                title: "Execution complete",
+                                detail: successful.map((item: any) => String(item.detail || "")).filter(Boolean).join(" · "),
+                            }
+                            : {
+                                status: "error",
+                                title: "Execution failed",
+                                detail: results[0]?.detail || "Unknown error",
+                            },
                     });
+                } catch (err) {
+                    return Response.json({ error: String(err) }, { status: 500 });
+                }
+            },
+        },
+
+        "/api/correction": {
+            async POST(req) {
+                try {
+                    const body = (await req.json().catch(() => ({}))) as {
+                        original?: string;
+                        corrected?: string;
+                        profile?: string;
+                    };
+                    const profileId = String(body.profile || "default");
+                    const original = String(body.original || "").trim();
+                    const corrected = String(body.corrected || "").trim();
+                    if (!original || !corrected) {
+                        return Response.json({ error: "original and corrected are required" }, { status: 400 });
+                    }
+                    const raw = await runBrain(["correction", original, corrected], profilePath(profileId));
+                    const learned = parseLastJson(raw) || [];
+                    return Response.json({ ok: true, learned });
                 } catch (err) {
                     return Response.json({ error: String(err) }, { status: 500 });
                 }

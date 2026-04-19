@@ -204,8 +204,12 @@
             text-align: center;
             padding: 22px;
             color: var(--muted);
+            cursor: pointer;
         }
         .import-drop.dragover { border-color: var(--mint); background: var(--mint-dim); color: var(--text); }
+        .import-drop button {
+            margin-top: 10px;
+        }
         .device-box {
             background: rgba(255,255,255,0.03);
             border: 1px solid var(--line);
@@ -266,6 +270,8 @@
             border: 1px solid var(--line);
             border-radius: 20px;
             padding: 18px;
+            display: grid;
+            gap: 12px;
         }
         .output-card h3 {
             font-size: 14px;
@@ -273,6 +279,150 @@
             letter-spacing: 0.12em;
             color: var(--soft);
             margin-bottom: 10px;
+        }
+        .routing-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 14px;
+            border-radius: 999px;
+            font-size: 13px;
+            font-weight: 700;
+            opacity: 0;
+            transform: translateY(8px);
+            transition: opacity 0.22s ease, transform 0.22s ease;
+            margin-top: 16px;
+            border: 1px solid transparent;
+        }
+        .routing-badge.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+        .routing-badge.local {
+            background: rgba(31,209,155,0.14);
+            border-color: rgba(31,209,155,0.35);
+            color: #8ff3d2;
+        }
+        .routing-badge.cloud {
+            background: rgba(154,110,255,0.14);
+            border-color: rgba(154,110,255,0.35);
+            color: #ceb7ff;
+        }
+        .compare-box {
+            min-height: 96px;
+        }
+        .compare-row {
+            display: grid;
+            grid-template-columns: 90px 1fr;
+            gap: 12px;
+            padding: 6px 0;
+            align-items: start;
+        }
+        .compare-row strong {
+            color: var(--soft);
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.12em;
+            padding-top: 3px;
+        }
+        .compare-row.best strong,
+        .compare-row.best div {
+            color: #8ff3d2;
+        }
+        .actions-panel {
+            display: none;
+            margin-top: 16px;
+            background: rgba(255,255,255,0.04);
+            border: 1px solid var(--line);
+            border-radius: 20px;
+            padding: 18px;
+        }
+        .actions-panel.visible {
+            display: block;
+        }
+        .action-panel {
+            display: none;
+            margin-top: 16px;
+            background: rgba(255,255,255,0.04);
+            border: 1px solid var(--line);
+            border-radius: 20px;
+            padding: 18px;
+        }
+        .action-panel.visible {
+            display: block;
+        }
+        .action-panel h3 {
+            font-size: 14px;
+            text-transform: uppercase;
+            letter-spacing: 0.12em;
+            color: var(--soft);
+            margin-bottom: 10px;
+        }
+        .action-panel p {
+            color: var(--text);
+            line-height: 1.6;
+            margin: 0;
+            white-space: pre-wrap;
+        }
+        .confirm-row {
+            display: none;
+            gap: 10px;
+            margin-top: 14px;
+        }
+        .confirm-row.visible {
+            display: flex;
+        }
+        .confirm-row button {
+            min-width: 112px;
+        }
+        #send-action-btn {
+            display: none;
+        }
+        .secondary {
+            border-radius: 999px;
+            border: 1px solid var(--line);
+            background: rgba(255,255,255,0.04);
+            color: var(--text);
+            padding: 12px 18px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+        .actions-panel h3 {
+            font-size: 14px;
+            text-transform: uppercase;
+            letter-spacing: 0.12em;
+            color: var(--soft);
+            margin-bottom: 10px;
+        }
+        .actions-list {
+            display: grid;
+            gap: 8px;
+        }
+        .action-item {
+            background: #090c12;
+            border: 1px solid var(--line);
+            border-radius: 14px;
+            padding: 12px 14px;
+            line-height: 1.5;
+        }
+        .correction-wrap {
+            display: grid;
+            gap: 8px;
+        }
+        .correction-input {
+            min-height: 44px;
+            padding: 10px 12px;
+            border-radius: 14px;
+        }
+        .learned-note {
+            color: #8ff3d2;
+            font-size: 12px;
+            opacity: 0;
+            transition: opacity 0.2s ease;
+            min-height: 16px;
+        }
+        .learned-note.visible {
+            opacity: 1;
         }
         .empty { color: var(--soft); font-style: italic; }
         .memory-list {
@@ -370,6 +520,7 @@
                         <div>
                             <strong style="display:block; margin-bottom:6px;">Drop files here or click to upload</strong>
                             <span>Images, txt, md, html, pdf, doc, docx</span>
+                            <div><button class="secondary" type="button" id="import-file-btn">Choose file</button></div>
                         </div>
                         <input type="file" id="import-file" hidden>
                     </div>
@@ -425,29 +576,71 @@
                                 <div class="response-box" id="transcript-box"><span class="empty">Your corrected transcript will appear here.</span></div>
                             </div>
                             <div>
+                                <span class="label">Transcript Comparison</span>
+                                <div class="response-box compare-box" id="transcript-compare"><span class="empty">Record audio to compare Parakeet, Whisper, and the final result.</span></div>
+                            </div>
+                            <div>
                                 <span class="label">Intent</span>
                                 <div class="response-box" id="intent-box"><span class="empty">Voice Right will summarize what you are trying to communicate.</span></div>
                             </div>
                         </div>
                     </div>
 
+                    <div class="routing-badge" id="routing-badge" aria-live="polite"></div>
+
+                    <div class="action-panel" id="action-plan-panel">
+                        <h3>Proposed Action</h3>
+                        <p id="action-plan-text"></p>
+                        <div class="confirm-row" id="confirm-row">
+                            <button class="primary" id="confirm-action-btn">Approve draft</button>
+                            <button class="primary" id="send-action-btn">Send now</button>
+                            <button class="secondary" id="cancel-action-btn">Cancel</button>
+                        </div>
+                    </div>
+
+                    <div class="action-panel" id="execution-panel">
+                        <h3>Execution Result</h3>
+                        <p id="execution-text"></p>
+                    </div>
+
                     <div class="output-grid" id="output-grid">
                         <div class="output-card">
                             <h3>Email</h3>
-                            <div class="response-box" id="output-email"><span class="empty">Select Email and generate outputs.</span></div>
+                            <div class="response-box" id="output-email"><span class="empty">Email drafts generated here will be ready to review and send.</span></div>
+                            <div class="correction-wrap">
+                                <input class="correction-input" type="text" id="correct-email" placeholder="Correct this email and press Enter">
+                                <div class="learned-note" id="learned-email">✅ Learned</div>
+                            </div>
                         </div>
                         <div class="output-card">
                             <h3>Message</h3>
-                            <div class="response-box" id="output-message"><span class="empty">Select Message and generate outputs.</span></div>
+                            <div class="response-box" id="output-message"><span class="empty">Message drafts will appear here once Voice Right understands the request.</span></div>
+                            <div class="correction-wrap">
+                                <input class="correction-input" type="text" id="correct-message" placeholder="Correct this message and press Enter">
+                                <div class="learned-note" id="learned-message">✅ Learned</div>
+                            </div>
                         </div>
                         <div class="output-card">
                             <h3>Slack</h3>
-                            <div class="response-box" id="output-slack"><span class="empty">Select Slack and generate outputs.</span></div>
+                            <div class="response-box" id="output-slack"><span class="empty">Slack-ready updates show up here when that output is selected.</span></div>
+                            <div class="correction-wrap">
+                                <input class="correction-input" type="text" id="correct-slack" placeholder="Correct this Slack draft and press Enter">
+                                <div class="learned-note" id="learned-slack">✅ Learned</div>
+                            </div>
                         </div>
                         <div class="output-card">
                             <h3>Discord</h3>
-                            <div class="response-box" id="output-discord"><span class="empty">Select Discord and generate outputs.</span></div>
+                            <div class="response-box" id="output-discord"><span class="empty">Discord-style output appears here when you ask for it.</span></div>
+                            <div class="correction-wrap">
+                                <input class="correction-input" type="text" id="correct-discord" placeholder="Correct this Discord draft and press Enter">
+                                <div class="learned-note" id="learned-discord">✅ Learned</div>
+                            </div>
                         </div>
+                    </div>
+
+                    <div class="actions-panel" id="actions-panel">
+                        <h3>Actions executed</h3>
+                        <div class="actions-list" id="actions-list"></div>
                     </div>
                 </section>
             </main>
@@ -457,6 +650,8 @@
     <script>
         let activeProfile = "default";
         let profile = null;
+        let lastComposeResult = null;
+        let lastComposeInput = null;
         let composeRecording = false;
         let composeRecorder = null;
         let gmailState = { connected: false, configured: false, email: "" };
@@ -490,7 +685,196 @@
 
         async function fetchJson(url, options) {
             const res = await fetch(url, options);
-            return await res.json();
+            const text = await res.text();
+            let parsed = null;
+            try {
+                parsed = text ? JSON.parse(text) : {};
+            } catch (_) {
+                throw new Error(text || `Request failed (${res.status})`);
+            }
+            if (!res.ok) {
+                throw new Error(parsed?.error || `Request failed (${res.status})`);
+            }
+            return parsed;
+        }
+
+        function escapeAttr(value) {
+            return escapeHtml(value).replace(/"/g, '&quot;');
+        }
+
+        function renderResponseBox(id, text, emptyText) {
+            const box = qs(id);
+            const safeText = String(text || '').trim();
+            box.innerHTML = safeText
+                ? escapeHtml(safeText)
+                : `<span class="empty">${escapeHtml(emptyText)}</span>`;
+        }
+
+        function renderRoutingBadge(routing) {
+            const badge = qs('routing-badge');
+            if (!routing || !routing.label) {
+                badge.className = 'routing-badge';
+                badge.textContent = '';
+                return;
+            }
+            const source = String(routing.source || '').toLowerCase();
+            const confidence = Number(routing.confidence || 0);
+            const label = source === 'cloud'
+                ? `☁️ Gemini cloud · ${Math.round(confidence * 100)}% confidence`
+                : `⚡ On-device · FunctionGemma · ${Math.round(confidence * 100)}% confidence`;
+            badge.className = `routing-badge ${source === 'cloud' ? 'cloud' : 'local'}`;
+            badge.textContent = label;
+            requestAnimationFrame(() => badge.classList.add('visible'));
+        }
+
+        function renderTranscriptComparison(result) {
+            const compare = qs('transcript-compare');
+            const stt = result?.stt;
+            if (!stt) {
+                compare.innerHTML = '<span class="empty">Record audio to compare Parakeet, Whisper, and the final result.</span>';
+                return;
+            }
+            const rows = [
+                ['Parakeet', stt.parakeet || 'No transcript'],
+                ['Whisper', stt.whisper_pass2 || stt.whisper_pass1 || 'No transcript'],
+                ['Best', result.transcript || stt.best || 'No transcript'],
+            ];
+            compare.innerHTML = rows.map(([label, value], index) => `
+                <div class="compare-row ${index === 2 ? 'best' : ''}">
+                    <strong>${escapeHtml(label)}</strong>
+                    <div>${escapeHtml(value)}</div>
+                </div>
+            `).join('');
+        }
+
+        function renderActions(actions) {
+            const panel = qs('actions-panel');
+            const list = qs('actions-list');
+            if (!Array.isArray(actions) || !actions.length) {
+                panel.classList.remove('visible');
+                list.innerHTML = '';
+                return;
+            }
+            list.innerHTML = actions.map((action) => `
+                <div class="action-item">✅ ${escapeHtml(action.action || 'Action completed')} · ${escapeHtml(action.detail || '')}</div>
+            `).join('');
+            panel.classList.add('visible');
+        }
+
+        function renderActionPlan(actionPlan) {
+            const panel = qs('action-plan-panel');
+            const text = qs('action-plan-text');
+            const confirmRow = qs('confirm-row');
+            const confirmBtn = qs('confirm-action-btn');
+            const sendBtn = qs('send-action-btn');
+            if (!actionPlan || !actionPlan.action) {
+                panel.classList.remove('visible');
+                confirmRow.classList.remove('visible');
+                confirmBtn.style.display = 'none';
+                sendBtn.style.display = 'none';
+                text.textContent = '';
+                return;
+            }
+            const parts = [actionPlan.summary || actionPlan.action];
+            if (actionPlan.recipient) parts.push(`Recipient: ${actionPlan.recipient}`);
+            if (actionPlan.target_app) parts.push(`Target app: ${actionPlan.target_app}`);
+            if (typeof actionPlan.confidence === 'number') {
+                parts.push(`Confidence: ${Math.round(actionPlan.confidence * 100)}%`);
+            }
+            text.textContent = parts.join('\n');
+            panel.classList.add('visible');
+            const status = String(actionPlan.status || '');
+            const awaitingConfirmation = ['awaiting_confirmation', 'awaiting_user_confirmation'].includes(status);
+            const readyToSend = status === 'ready_to_send';
+            if (actionPlan.requires_confirmation && (awaitingConfirmation || readyToSend)) {
+                confirmBtn.style.display = awaitingConfirmation ? 'inline-flex' : 'none';
+                sendBtn.style.display = readyToSend ? 'inline-flex' : 'none';
+                confirmRow.classList.add('visible');
+            } else {
+                confirmRow.classList.remove('visible');
+                confirmBtn.style.display = 'none';
+                sendBtn.style.display = 'none';
+            }
+        }
+
+        function renderExecutionResult(execution) {
+            const panel = qs('execution-panel');
+            const text = qs('execution-text');
+            if (!execution || !execution.status) {
+                panel.classList.remove('visible');
+                text.textContent = '';
+                return;
+            }
+            const parts = [];
+            if (execution.title) parts.push(execution.title);
+            if (execution.detail) parts.push(execution.detail);
+            if (!parts.length) parts.push(execution.summary || execution.status || 'Pending');
+            text.textContent = parts.join('\n');
+            panel.classList.add('visible');
+        }
+
+        function approveCurrentDraft() {
+            if (!lastComposeResult?.action_plan) return;
+            lastComposeResult.action_plan.status = 'ready_to_send';
+            renderActionPlan(lastComposeResult.action_plan);
+            renderExecutionResult({
+                status: 'ready_to_send',
+                title: 'Draft approved',
+                detail: 'Draft approved. Review the message, then click Send now.',
+            });
+        }
+
+        function outputEmptyState(target) {
+            return {
+                email: 'Email drafts generated here will be ready to review and send.',
+                message: 'Message drafts will appear here once Voice Right understands the request.',
+                slack: 'Slack-ready updates show up here when that output is selected.',
+                discord: 'Discord-style output appears here when you ask for it.',
+            }[target] || 'Output will appear here.';
+        }
+
+        function renderOutputs(result) {
+            const selected = new Set(selectedTargets());
+            ['email', 'message', 'slack', 'discord'].forEach((target) => {
+                const value = result?.outputs?.[target] || '';
+                renderResponseBox(`output-${target}`, value, selected.has(target) ? outputEmptyState(target) : `${target[0].toUpperCase() + target.slice(1)} output is not selected yet.`);
+                qs(`correct-${target}`).disabled = !value;
+            });
+        }
+
+        function showLearned(target) {
+            const node = qs(`learned-${target}`);
+            node.classList.add('visible');
+            clearTimeout(node.__hideTimer);
+            node.__hideTimer = setTimeout(() => node.classList.remove('visible'), 2000);
+        }
+
+        function extractCorrectionOriginal(target, fullText, corrected) {
+            const text = String(fullText || '').trim();
+            const fallback = corrected || text;
+            if (!text) return fallback;
+
+            const lines = text
+                .split(/\n+/)
+                .map((line) => line.trim())
+                .filter(Boolean);
+
+            if (!lines.length) return fallback;
+
+            if (target === 'email') {
+                const candidates = lines.filter((line) => {
+                    const lower = line.toLowerCase();
+                    if (lower.startsWith('subject:')) return false;
+                    if (/^(hi|hello|hey)\b/.test(lower)) return false;
+                    if (/^(thanks|best|regards|sincerely|cheers)[,!?]?$/.test(lower)) return false;
+                    if (line.length < 8) return false;
+                    return true;
+                });
+                return candidates[0] || fallback;
+            }
+
+            const normalized = lines.join(' ').replace(/\s+/g, ' ').trim();
+            return normalized || fallback;
         }
 
         function selectedTargets() {
@@ -583,15 +967,21 @@
         }
 
         async function importFile(file) {
-            const form = new FormData();
-            form.append('profile', activeProfile);
-            form.append('file', file);
-            const res = await fetchJson('/api/import-memory', { method: 'POST', body: form });
-            if (res.error) {
-                alert(res.error);
-                return;
+            try {
+                qs('compose-status').textContent = `Importing ${file.name}...`;
+                const form = new FormData();
+                form.append('profile', activeProfile);
+                form.append('file', file);
+                const res = await fetchJson('/api/import-memory', { method: 'POST', body: form });
+                if (res.error) {
+                    throw new Error(res.error);
+                }
+                await refreshProfile();
+                qs('compose-status').textContent = `Imported ${file.name}.`;
+            } catch (err) {
+                qs('compose-status').textContent = `Import failed: ${err.message}`;
+                alert(`Import failed: ${err.message}`);
             }
-            await refreshProfile();
         }
 
         async function importTextMemory() {
@@ -680,7 +1070,7 @@
             qs('level-fill').style.width = '0%';
         }
 
-        async function startWavRecording(deviceId) {
+        async function startBrowserRecording(deviceId) {
             const stream = await navigator.mediaDevices.getUserMedia({ audio: deviceId ? { deviceId: { exact: deviceId } } : true });
             const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
             const source = audioCtx.createMediaStreamSource(stream);
@@ -734,39 +1124,99 @@
                 const s = Math.max(-1, Math.min(1, samples[i]));
                 view.setInt16(offset, s < 0 ? s * 0x8000 : s * 0x7fff, true);
             }
-            return new File([view], `voice-right-${Date.now()}.wav`, { type: 'audio/wav' });
+            return new Blob([view], { type: 'audio/wav' });
         }
 
         function writeString(view, offset, string) {
             for (let i = 0; i < string.length; i++) view.setUint8(offset + i, string.charCodeAt(i));
         }
 
-        async function composeFromInput(file = null) {
+        async function blobToBase64(blob) {
+            const buffer = await blob.arrayBuffer();
+            let binary = '';
+            const bytes = new Uint8Array(buffer);
+            const chunkSize = 0x8000;
+            for (let i = 0; i < bytes.length; i += chunkSize) {
+                binary += String.fromCharCode(...bytes.subarray(i, i + chunkSize));
+            }
+            return btoa(binary);
+        }
+
+        async function submitCorrection(target) {
+            if (!lastComposeResult?.outputs?.[target]) return;
+            const input = qs(`correct-${target}`);
+            const corrected = input.value.trim();
+            if (!corrected) return;
+            const original = extractCorrectionOriginal(target, lastComposeResult.outputs[target], corrected);
+            try {
+                const result = await fetchJson('/api/correction', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        original,
+                        corrected,
+                        profile: activeProfile,
+                    }),
+                });
+                if (result.error) {
+                    throw new Error(result.error);
+                }
+                input.value = '';
+                showLearned(target);
+                await refreshProfile();
+            } catch (err) {
+                qs('compose-status').textContent = `Correction failed: ${err.message}`;
+            }
+        }
+
+        async function composeFromInput(options = {}) {
             const status = qs('compose-status');
             status.textContent = 'Generating outputs...';
-            const form = new FormData();
-            form.append('profile', activeProfile);
-            form.append('targets', selectedTargets().join(','));
-            form.append('text', qs('compose-text').value.trim());
-            if (file) form.append('file', file, file.name);
-            const result = await fetchJson('/api/compose', { method: 'POST', body: form });
-            if (result.error) {
-                status.textContent = result.error;
-                return;
+            try {
+            const typedSource = options.transcript ?? qs('compose-text').value.trim() ?? '';
+            const typedTranscript = String(typedSource).trim();
+                const useTypedPath = Boolean(typedTranscript);
+                const audioB64 = useTypedPath ? '' : (options.audioB64 || '');
+                lastComposeInput = {
+                    transcript: useTypedPath ? typedTranscript : '',
+                    audioB64,
+                };
+                const payload = {
+                    profile: activeProfile,
+                    target_apps: selectedTargets(),
+                    transcript: useTypedPath ? typedTranscript : '',
+                    audio_b64: audioB64,
+                    approved: Boolean(options.approved),
+                    execute: Boolean(options.execute),
+                };
+                const result = await fetchJson('/api/compose', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload),
+                });
+                if (result.error) {
+                    throw new Error(result.error);
+                }
+                lastComposeResult = result;
+                renderResponseBox('transcript-box', result.transcript, 'Your corrected transcript will appear here.');
+                renderTranscriptComparison(result);
+                renderResponseBox('intent-box', result.intent, 'Voice Right will summarize what you are trying to communicate.');
+                renderRoutingBadge(result.routing);
+                renderActionPlan(result.action_plan);
+                renderExecutionResult(result.execution_result);
+                renderOutputs(result);
+                renderActions(result.actions);
+                status.textContent = 'Done.';
+            } catch (err) {
+                status.textContent = `Generate failed: ${err.message}`;
+                alert(`Generate failed: ${err.message}`);
             }
-            qs('transcript-box').textContent = result.transcript || '';
-            qs('intent-box').textContent = result.intent || '';
-            ['email', 'message', 'slack', 'discord'].forEach((target) => {
-                const box = qs(`output-${target}`);
-                box.textContent = result.outputs?.[target] || 'Not selected.';
-            });
-            status.textContent = 'Done.';
         }
 
         async function toggleComposeRecording() {
             const button = qs('compose-mic');
             if (!composeRecording) {
-                composeRecorder = await startWavRecording(window.__voiceRightMicDeviceId || micState.selectedDeviceId);
+                composeRecorder = await startBrowserRecording(window.__voiceRightMicDeviceId || micState.selectedDeviceId);
                 composeRecording = true;
                 button.classList.add('recording');
                 qs('compose-status').textContent = 'Recording... click again to stop.';
@@ -775,12 +1225,29 @@
 
             composeRecording = false;
             button.classList.remove('recording');
-            const file = await composeRecorder.stop();
-            await composeFromInput(file);
+            const blob = await composeRecorder.stop();
+            const audioB64 = await blobToBase64(blob);
+            await composeFromInput({ transcript: '', audioB64 });
+        }
+
+        async function cancelComposeRecording() {
+            if (!composeRecording || !composeRecorder) return;
+            composeRecording = false;
+            qs('compose-mic').classList.remove('recording');
+            try {
+                await composeRecorder.stop();
+            } catch (_) {
+            }
+            composeRecorder = null;
+            qs('compose-status').textContent = 'Recording cancelled.';
         }
 
         const importDrop = qs('import-drop');
         importDrop.addEventListener('click', () => qs('import-file').click());
+        qs('import-file-btn').addEventListener('click', (event) => {
+            event.stopPropagation();
+            qs('import-file').click();
+        });
         importDrop.addEventListener('dragover', (event) => {
             event.preventDefault();
             importDrop.classList.add('dragover');
@@ -836,8 +1303,55 @@
             micState.selectedDeviceId = event.target.value;
             if (micState.stream) await startDeviceCheck(micState.selectedDeviceId);
         });
-        qs('compose-submit').onclick = () => composeFromInput();
+        qs('compose-submit').onclick = async () => {
+            if (composeRecording && qs('compose-text').value.trim()) {
+                await cancelComposeRecording();
+            }
+            await composeFromInput();
+        };
         qs('compose-mic').onclick = toggleComposeRecording;
+        qs('confirm-action-btn').onclick = async () => {
+            approveCurrentDraft();
+        };
+        qs('send-action-btn').onclick = async () => {
+            if (!lastComposeResult?.function_calls?.length) return;
+            const status = qs('compose-status');
+            status.textContent = 'Sending...';
+            try {
+                const result = await fetchJson('/api/execute-action', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        profile: activeProfile,
+                        function_calls: lastComposeResult.function_calls,
+                    }),
+                });
+                if (result.error) {
+                    throw new Error(result.error);
+                }
+                renderExecutionResult(result.execution_result);
+                renderActions(result.actions);
+                if (lastComposeResult?.action_plan) {
+                    lastComposeResult.action_plan.status = 'executed';
+                    renderActionPlan(lastComposeResult.action_plan);
+                }
+                status.textContent = 'Sent.';
+            } catch (err) {
+                status.textContent = `Send failed: ${err.message}`;
+                alert(`Send failed: ${err.message}`);
+            }
+        };
+        qs('cancel-action-btn').onclick = () => {
+            renderExecutionResult({ status: 'cancelled', summary: 'Action cancelled. Nothing was executed.' });
+            qs('confirm-row').classList.remove('visible');
+        };
+        ['email', 'message', 'slack', 'discord'].forEach((target) => {
+            qs(`correct-${target}`).addEventListener('keydown', async (event) => {
+                if (event.key !== 'Enter' || event.shiftKey) return;
+                event.preventDefault();
+                await submitCorrection(target);
+            });
+        });
 
         handleOAuthBanner();
         Promise.all([refreshProfiles(), refreshProfile()]).catch(console.error);

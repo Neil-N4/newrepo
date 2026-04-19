@@ -22,6 +22,7 @@ data/profiles/*.voicepassport.json
 data/oauth/
 data/calibration/
 data/recordings/
+data/drafts/
 !data/profiles/.gitkeep
 !data/calibration/.gitkeep
 

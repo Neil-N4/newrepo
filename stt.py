@@ -1,132 +1,180 @@
+"""Dual-STT pipeline for Voice Right."""
+
 from __future__ import annotations
 
-import difflib
+import atexit
 import json
-import re
 import sys
+from functools import lru_cache
 from pathlib import Path
-
-from brain import load_passport, reconcile_stt
-
-try:
-    from src.cactus import cactus_init, cactus_transcribe, cactus_destroy
-    from src.downloads import ensure_model
-    CACTUS_AVAILABLE = True
-except ImportError:
-    CACTUS_AVAILABLE = False
+from threading import Lock
+from typing import Any
 
 
-PARAKEET_MODEL = "nvidia/parakeet-ctc-1.1b"
-WHISPER_MODEL = "openai/whisper-small"
-VOCAB_BOOST = 0.5
-
-_parakeet = None
-_whisper = None
+PROMPT_TOKEN = "<|startoftranscript|><|en|><|transcribe|><|notimestamps|>"
+PARAKEET_MODEL_ID = "nvidia/parakeet-ctc-1.1b"
+WHISPER_MODEL_ID = "openai/whisper-small"
 
 
-def load_model(name: str):
-    if not CACTUS_AVAILABLE:
-        raise RuntimeError("Cactus Python SDK not available")
-    return cactus_init(str(ensure_model(name)), None, False)
+def _candidate_cactus_roots() -> list[Path]:
+    repo_root = Path(__file__).resolve().parent
+    home = Path.home()
+    return [
+        repo_root / "cactus",
+        home / "yc-voice-agents-hackathon" / "cactus",
+        home / "Documents" / "Playground" / "yc-voice-agents-hackathon" / "cactus",
+        home / "Documents" / "cactus",
+    ]
 
 
-def parakeet():
-    global _parakeet
-    if _parakeet is None:
-        _parakeet = load_model(PARAKEET_MODEL)
-    return _parakeet
+def _ensure_cactus_python_on_path() -> Path:
+    for cactus_root in _candidate_cactus_roots():
+        python_dir = cactus_root / "python"
+        if python_dir.exists():
+            python_dir_str = str(python_dir)
+            if python_dir_str not in sys.path:
+                sys.path.insert(0, python_dir_str)
+            return python_dir
+    raise RuntimeError("Could not locate cactus/python directory")
 
 
-def whisper():
-    global _whisper
-    if _whisper is None:
-        _whisper = load_model(WHISPER_MODEL)
-    return _whisper
+_CACTUS_PYTHON_DIR = _ensure_cactus_python_on_path()
+
+from src.cactus import cactus_destroy, cactus_init, cactus_transcribe  # type: ignore  # noqa: E402
+from src.downloads import ensure_model  # type: ignore  # noqa: E402
 
 
-def cleanup():
-    global _parakeet, _whisper
-    if _parakeet is not None:
-        cactus_destroy(_parakeet)
-        _parakeet = None
-    if _whisper is not None:
-        cactus_destroy(_whisper)
-        _whisper = None
+_MODEL_LOCK = Lock()
+_MODEL_HANDLES: list[Any] = []
 
 
-def clean(raw: str) -> str:
-    text = raw.strip()
-    if text.startswith("{"):
+@atexit.register
+def _cleanup_models() -> None:
+    while _MODEL_HANDLES:
+        handle = _MODEL_HANDLES.pop()
         try:
-            payload = json.loads(text)
-            for key in ("transcription", "text", "response"):
-                if isinstance(payload.get(key), str):
-                    return payload[key].strip()
-        except json.JSONDecodeError:
-            pass
+            cactus_destroy(handle)
+        except Exception:
+            continue
+
+
+@lru_cache(maxsize=4)
+def _load_model(model_id: str) -> Any:
+    with _MODEL_LOCK:
+        model_path = ensure_model(model_id)
+        handle = cactus_init(str(model_path), None, False)
+        _MODEL_HANDLES.append(handle)
+        return handle
+
+
+def _normalize_text(value: str | None) -> str:
+    if not value:
+        return ""
+    if isinstance(value, dict):
+        for key in ("text", "transcript", "response", "transcription"):
+            field = value.get(key)
+            if isinstance(field, str) and field.strip():
+                return field.strip()
+        return ""
+    text = str(value).strip()
+    if not text:
+        return ""
+    try:
+        parsed = json.loads(text)
+    except json.JSONDecodeError:
+        return text
+    if isinstance(parsed, dict):
+        for key in ("text", "transcript", "response", "transcription"):
+            field = parsed.get(key)
+            if isinstance(field, str) and field.strip():
+                return field.strip()
+        return ""
     return text
 
 
-def transcribe(audio_path: str) -> dict:
+def _whisper_options(vocabulary: list[str] | None) -> str:
+    payload: dict[str, Any] = {}
+    vocab = []
+    for term in (vocabulary or []):
+        if isinstance(term, dict):
+            value = str(term.get("text", "")).strip()
+        else:
+            value = str(term).strip()
+        if value:
+            vocab.append(value)
+    if vocab:
+        payload["custom_vocabulary"] = vocab
+        payload["vocabulary_boost"] = 0.5
+    return json.dumps(payload)
+
+
+def _run_transcribe(
+    model_id: str,
+    audio_path: str,
+    prompt: str | None,
+    options_json: str,
+) -> str:
+    model = _load_model(model_id)
+    raw = cactus_transcribe(
+        model,
+        audio_path,
+        prompt,
+        options_json,
+        None,
+        None,
+    )
+    return _normalize_text(raw)
+
+
+def transcribe(audio_path: str, vocabulary: list[str] | None = None) -> dict:
+    errors: dict[str, str] = {}
+    result = {
+        "parakeet": "",
+        "whisper_pass1": "",
+        "whisper_pass2": "",
+        "best": "",
+        "errors": errors,
+    }
+
     path = Path(audio_path)
     if not path.exists():
-        raise FileNotFoundError(audio_path)
-    passport = load_passport()
-    terms = [term.text for term in passport.terms]
-    options = json.dumps({"custom_vocabulary": terms, "vocabulary_boost": VOCAB_BOOST})
+        errors["audio"] = f"Audio file not found: {audio_path}"
+        return result
 
-    p = clean(cactus_transcribe(parakeet(), str(path), None, json.dumps({}), None, None))
-    w1 = clean(cactus_transcribe(whisper(), str(path), None, options, None, None))
-    w2 = clean(cactus_transcribe(whisper(), str(path), w1 or None, options, None, None))
-    final = reconcile_stt(p, w1, w2, passport)
-    return {
-        "parakeet": p,
-        "whisper_pass1": w1,
-        "whisper_pass2": w2,
-        "final": final,
-        "terms_used": terms,
-    }
+    whisper_options = _whisper_options(vocabulary)
 
-
-def accuracy(expected: str, actual: str) -> int:
-    a = re.findall(r"[a-z0-9']+", expected.lower())
-    b = re.findall(r"[a-z0-9']+", actual.lower())
-    if not a:
-        return 0
-    return round(difflib.SequenceMatcher(a=a, b=b).ratio() * 100)
-
-
-def benchmark(audio_path: str, expected: str) -> dict:
-    passport = load_passport()
-    result = transcribe(audio_path)
-    return {
-        "accuracy_before": accuracy(expected, result["parakeet"]),
-        "accuracy_after": accuracy(expected, result["final"]),
-        "patterns_learned": len(passport.corrections),
-        "stt_wired": True,
-        "expected_text": expected,
-        **result,
-    }
-
-
-def transcript_only(audio_path: str) -> str:
-    return transcribe(audio_path)["final"]
-
-
-if __name__ == "__main__":
-    if len(sys.argv) < 3:
-        print("usage: python stt.py transcribe <audio> | benchmark <audio> <expected> | transcript <audio>")
-        raise SystemExit(1)
-    cmd = sys.argv[1]
     try:
-        if cmd == "transcribe":
-            print(json.dumps(transcribe(sys.argv[2])))
-        elif cmd == "transcript":
-            print(transcript_only(sys.argv[2]))
-        elif cmd == "benchmark":
-            expected = sys.argv[3] if len(sys.argv) >= 4 else ""
-            print(json.dumps(benchmark(sys.argv[2], expected)))
-        else:
-            raise RuntimeError(f"unknown command: {cmd}")
-    finally:
-        cleanup()
+        result["parakeet"] = _run_transcribe(
+            PARAKEET_MODEL_ID,
+            str(path),
+            None,
+            json.dumps({}),
+        )
+    except Exception as exc:
+        errors["parakeet"] = str(exc)
+
+    try:
+        result["whisper_pass1"] = _run_transcribe(
+            WHISPER_MODEL_ID,
+            str(path),
+            PROMPT_TOKEN,
+            whisper_options,
+        )
+    except Exception as exc:
+        errors["whisper_pass1"] = str(exc)
+
+    pass2_prompt = PROMPT_TOKEN
+    if result["whisper_pass1"]:
+        pass2_prompt = f"{PROMPT_TOKEN} {result['whisper_pass1']}"
+    try:
+        result["whisper_pass2"] = _run_transcribe(
+            WHISPER_MODEL_ID,
+            str(path),
+            pass2_prompt,
+            whisper_options,
+        )
+    except Exception as exc:
+        errors["whisper_pass2"] = str(exc)
+
+    result["best"] = result["whisper_pass2"] or result["whisper_pass1"] or result["parakeet"]
+    return result
