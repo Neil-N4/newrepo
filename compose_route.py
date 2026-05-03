@@ -244,6 +244,7 @@ def _render_email_from_args(args: dict[str, Any], profile: dict[str, Any]) -> st
     recipient = str(args.get("to", "")).strip() or "there"
     subject = str(args.get("subject", "")).strip() or "Quick update"
     body = str(args.get("body", "")).strip() or "Quick update."
+    body = _strip_command_prefix(body, recipient)
     if body and body[0].islower():
         body = body[0].upper() + body[1:]
     if body and not body.endswith((".", "!", "?")):
@@ -255,6 +256,7 @@ def _render_email_from_args(args: dict[str, Any], profile: dict[str, Any]) -> st
 def _render_message_from_args(args: dict[str, Any], transcript: str) -> str:
     recipient = str(args.get("to", "")).strip() or "there"
     body = str(args.get("body", "")).strip() or str(transcript or "").strip()
+    body = _strip_command_prefix(body, recipient)
     body = re.sub(r"^(Hey|Hi)\s+[A-Z][A-Za-z]+,\s*", "", body).strip()
     if body and body[0].islower():
         body = body[0].upper() + body[1:]
@@ -389,7 +391,23 @@ def _canonicalize_terms(text: str, profile: dict[str, Any], *, allow_fuzzy: bool
 def _apply_corrections(text: str, profile: dict[str, Any]) -> str:
     updated = str(text or "")
     for wrong, right in sorted(_profile_corrections(profile), key=lambda item: len(item[0]), reverse=True):
-        updated = re.sub(rf"(?i)\b{re.escape(wrong)}\b", right, updated)
+        raw_wrong = str(wrong or "").strip()
+        replacement = str(right or "").strip()
+        if not raw_wrong or not replacement:
+            continue
+
+        # Corrections captured from drafted outputs often include trailing punctuation.
+        # Match both punctuated and non-punctuated variants in later transcripts.
+        core_wrong = raw_wrong.rstrip(".,!?;:")
+        candidates = [raw_wrong]
+        if core_wrong and core_wrong.lower() != raw_wrong.lower():
+            candidates.append(core_wrong)
+
+        for candidate in candidates:
+            if not candidate:
+                continue
+            pattern = re.compile(rf"(?i)\b{re.escape(candidate)}\b(?:[.,!?;:])?")
+            updated = pattern.sub(replacement, updated)
     return updated
 
 
@@ -474,7 +492,74 @@ def _extract_subject_and_body(email_text: str, transcript: str) -> tuple[str, st
     body = "\n".join(body_lines).strip() or str(transcript or "").strip() or "Quick update"
     if re.fullmatch(r"(hi|hello|hey|name|recipient)[,!\s]*", body, flags=re.IGNORECASE):
         body = str(transcript or "").strip() or "Quick update"
+    recipient = _extract_email_recipient(text)
+    body = _strip_command_prefix(body, recipient)
+    if _looks_like_command_instruction(subject):
+        subject = "Quick update"
+    if subject.lower().startswith("quick update "):
+        trailing = subject[len("quick update "):].strip()
+        if _looks_like_command_instruction(trailing):
+            subject = "Quick update"
+    if body and body[0].islower():
+        body = body[0].upper() + body[1:]
+    if body and not body.endswith((".", "!", "?")):
+        body = f"{body}."
     return (subject, body)
+
+
+def _extract_email_recipient(email_text: str) -> str:
+    match = re.search(r"\b(?:Hi|Hello|Hey)\s+([A-Z][A-Za-z]+)\b", str(email_text or ""))
+    return match.group(1).strip() if match else ""
+
+
+def _looks_like_command_instruction(text: str) -> bool:
+    normalized = re.sub(r"\s+", " ", str(text or "").strip().lower())
+    if not normalized:
+        return False
+    command_prefixes = (
+        "message ",
+        "email ",
+        "text ",
+        "tell ",
+        "notify ",
+        "update ",
+        "send message ",
+        "send a message ",
+        "send email ",
+        "send an email ",
+    )
+    return normalized.startswith(command_prefixes)
+
+
+def _strip_command_prefix(text: str, recipient: str = "") -> str:
+    cleaned = str(text or "").strip()
+    if not cleaned:
+        return cleaned
+
+    candidate = cleaned
+    if recipient:
+        safe_recipient = re.escape(str(recipient).strip())
+        patterns = [
+            rf"^\s*(?:please\s+)?(?:can\s+you\s+)?(?:message|email|text|tell|notify|update)\s+{safe_recipient}\s+(?:that\s+)?(.+)$",
+            rf"^\s*(?:please\s+)?(?:can\s+you\s+)?send\s+(?:an?\s+)?(?:email|message)\s+to\s+{safe_recipient}\s+(?:that\s+)?(.+)$",
+        ]
+        for pattern in patterns:
+            match = re.match(pattern, candidate, flags=re.IGNORECASE)
+            if match:
+                candidate = match.group(1).strip()
+                break
+
+    generic_patterns = [
+        r"^\s*(?:please\s+)?(?:can\s+you\s+)?(?:message|email|text|tell|notify|update)\s+[A-Z][A-Za-z]+\s+(?:that\s+)?(.+)$",
+        r"^\s*(?:please\s+)?(?:can\s+you\s+)?send\s+(?:an?\s+)?(?:email|message)\s+to\s+[A-Z][A-Za-z]+\s+(?:that\s+)?(.+)$",
+    ]
+    for pattern in generic_patterns:
+        match = re.match(pattern, candidate, flags=re.IGNORECASE)
+        if match:
+            candidate = match.group(1).strip()
+            break
+
+    return candidate or cleaned
 
 
 def _looks_placeholder_recipient(value: str) -> bool:

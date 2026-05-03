@@ -1349,10 +1349,11 @@
             if (!original || !cmd) return '';
 
             const wantsShorter = /\b(short|shorter|concise|brief)\b/.test(cmd);
+            const wantsLonger = /\b(long|longer|expand|more detail|more details|elaborate)\b/.test(cmd);
             const wantsDirect = /\b(direct|crisp)\b/.test(cmd);
             const wantsWarmer = /\b(warm|warmer|friendly)\b/.test(cmd);
             const wantsCTA = /\b(call to action|cta|next step)\b/.test(cmd);
-            if (!wantsShorter && !wantsDirect && !wantsWarmer && !wantsCTA) return '';
+            if (!wantsShorter && !wantsLonger && !wantsDirect && !wantsWarmer && !wantsCTA) return '';
 
             if (app === 'email') {
                 const subjectMatch = original.match(/^Subject:\s*(.+)$/im);
@@ -1368,6 +1369,9 @@
                     .trim();
                 let body = bodyRaw || 'Quick update.';
                 if (wantsShorter || wantsDirect) body = compactText(body, 1);
+                if (wantsLonger) {
+                    body = `${body.replace(/[.!?]*$/, '')}. Sharing a bit more context so you have the full picture and timeline.`;
+                }
                 if (wantsWarmer) body = `${body.replace(/[.!?]*$/, '')}. Thanks again for the quick support.`;
                 if (wantsCTA) body = `${body.replace(/[.!?]*$/, '')}. If this works for you, please confirm by EOD.`;
                 return `Subject: ${compactText(subject, 1).replace(/[.!?]*$/, '')}\n\nHi ${recipient},\n\n${body}\n\n${signoff}`;
@@ -1375,6 +1379,7 @@
 
             let body = original;
             if (wantsShorter || wantsDirect) body = compactText(body, 1);
+            if (wantsLonger) body = `${body.replace(/[.!?]*$/, '')}. Adding a bit more detail so this is clearer.`;
             if (wantsWarmer) body = `${body.replace(/[.!?]*$/, '')} Appreciate your help on this.`;
             if (wantsCTA) body = `${body.replace(/[.!?]*$/, '')} Please confirm next steps today.`;
             return body.trim();
@@ -1541,6 +1546,30 @@
                 : '<div class="empty">Run compose to see transcript evidence, routing decision, and action rationale.</div>';
         }
 
+        function isCommandStyleInstruction(text) {
+            const normalized = String(text || '').replace(/\s+/g, ' ').trim().toLowerCase();
+            if (!normalized) return false;
+            return /^(message|email|text|tell|notify|update|send (?:a |an )?(?:message|email))\s+/.test(normalized);
+        }
+
+        function stripCommandPrefix(text, recipient) {
+            const cleaned = String(text || '').trim();
+            if (!cleaned) return cleaned;
+            const escapedRecipient = String(recipient || '').trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+            const patterns = [];
+            if (escapedRecipient) {
+                patterns.push(new RegExp(`^\\s*(?:please\\s+)?(?:can\\s+you\\s+)?(?:message|email|text|tell|notify|update)\\s+${escapedRecipient}\\s+(?:that\\s+)?(.+)$`, 'i'));
+                patterns.push(new RegExp(`^\\s*(?:please\\s+)?(?:can\\s+you\\s+)?send\\s+(?:an?\\s+)?(?:email|message)\\s+to\\s+${escapedRecipient}\\s+(?:that\\s+)?(.+)$`, 'i'));
+            }
+            patterns.push(/^\s*(?:please\s+)?(?:can\s+you\s+)?(?:message|email|text|tell|notify|update)\s+[A-Z][A-Za-z]+\s+(?:that\s+)?(.+)$/i);
+            patterns.push(/^\s*(?:please\s+)?(?:can\s+you\s+)?send\s+(?:an?\s+)?(?:email|message)\s+to\s+[A-Z][A-Za-z]+\s+(?:that\s+)?(.+)$/i);
+            for (const pattern of patterns) {
+                const match = cleaned.match(pattern);
+                if (match && match[1]) return String(match[1]).trim();
+            }
+            return cleaned;
+        }
+
         function extractEmailSubjectAndBody(emailText, fallbackTranscript) {
             const text = String(emailText || '').trim();
             const transcript = String(fallbackTranscript || '').trim();
@@ -1553,6 +1582,11 @@
                     .replace(/\b(hi|hello|hey)\b.*$/i, '')
                     .replace(/[.?!].*$/, '')
                     .trim();
+                if (isCommandStyleInstruction(subject)) return 'Quick update';
+                if (/^quick update\s+/i.test(subject)) {
+                    const trailing = subject.replace(/^quick update\s+/i, '').trim();
+                    if (isCommandStyleInstruction(trailing)) return 'Quick update';
+                }
                 if (subject.length > 72) subject = `${subject.slice(0, 69).trimEnd()}...`;
                 return subject || 'Quick update';
             };
@@ -1609,12 +1643,19 @@
                 .replace(new RegExp(`^${recipient.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\s*,?\\s*`, 'i'), '')
                 .replace(/\b(thanks|best regards|best|regards|cheers),?\s*[A-Z][A-Za-z]+$/i, '')
                 .replace(/\b(thanks|best regards|best|regards|cheers),?\s*$/i, '')
+                .trim();
+            cleanedBody = stripCommandPrefix(cleanedBody, recipient)
                 .replace(/^([a-z])/, (m) => m.toUpperCase())
                 .trim();
 
             if (!cleanedBody || /^[.!?]+$/.test(cleanedBody)) {
                 cleanedBody = transcript
                     .replace(/^(hi|hello|hey)\s+[^,]+,?\s*/i, '')
+                    .replace(new RegExp(`^${recipient.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\s*,?\\s*`, 'i'), '')
+                    .replace(/\b(thanks|best regards|best|regards|cheers),?\s*[A-Z][A-Za-z]+$/i, '')
+                    .replace(/\b(thanks|best regards|best|regards|cheers),?\s*$/i, '')
+                    .trim();
+                cleanedBody = stripCommandPrefix(cleanedBody, recipient)
                     .replace(/^([a-z])/, (m) => m.toUpperCase())
                     .trim();
             }
@@ -2226,6 +2267,15 @@
             const input = qs(`correct-${target}`);
             const corrected = input.value.trim();
             if (!corrected) return;
+            const localInstructionEdit = tuneDraftLocally(lastComposeResult.outputs[target], corrected, target);
+            if (localInstructionEdit) {
+                lastComposeResult.outputs[target] = localInstructionEdit;
+                input.value = '';
+                showLearned(target);
+                renderOutputs(lastComposeResult);
+                setAgentTrace('learn', 'done', `Updated ${target} draft from instruction: ${corrected}`);
+                return;
+            }
             const original = extractCorrectionOriginal(target, lastComposeResult.outputs[target], corrected);
             try {
                 const result = await fetchJson('/api/correction', {
