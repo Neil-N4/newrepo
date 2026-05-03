@@ -288,10 +288,21 @@ def unique_preserve(items: list[str]) -> list[str]:
     return out
 
 
+def _is_calendar_year_token(text: str) -> bool:
+    """True if the term is only a 4-digit calendar year (not useful STT vocabulary)."""
+    core = str(text or "").strip().strip(".,;:!?")
+    if not re.fullmatch(r"\d{4}", core):
+        return False
+    year = int(core)
+    return 1800 <= year <= 2199
+
+
 def add_terms(passport: VoicePassport, terms: list[str], source: str) -> list[Term]:
     existing = {term.text.lower() for term in passport.terms}
     added: list[Term] = []
     for text in unique_preserve(terms):
+        if _is_calendar_year_token(text):
+            continue
         if text.lower() in existing:
             continue
         term = Term(
